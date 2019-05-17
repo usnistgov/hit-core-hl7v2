@@ -12,6 +12,8 @@
 package gov.nist.hit.core.hl7v2.service;
 
 import java.io.InputStream;
+import java.io.Reader;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -22,10 +24,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import gov.nist.healthcare.unified.enums.Context;
 import gov.nist.healthcare.unified.model.EnhancedReport;
 import gov.nist.healthcare.unified.proxy.ValidationProxy;
+import gov.nist.hit.core.domain.Domain;
 import gov.nist.hit.core.domain.MessageValidationCommand;
 import gov.nist.hit.core.domain.MessageValidationResult;
 import gov.nist.hit.core.domain.TestContext;
 import gov.nist.hit.core.hl7v2.domain.HL7V2TestContext;
+import gov.nist.hit.core.service.DomainService;
 import gov.nist.hit.core.service.MessageValidator;
 import gov.nist.hit.core.service.ValidationLogService;
 import gov.nist.hit.core.service.exception.MessageException;
@@ -39,6 +43,9 @@ public abstract class HL7V2MessageValidator implements MessageValidator {
 
 	@Autowired
 	private ValidationLogService validationLogService;
+	
+	@Autowired
+	private DomainService domainService;
 
 	@Override
 	public MessageValidationResult validate(TestContext testContext, MessageValidationCommand command)
@@ -85,8 +92,20 @@ public abstract class HL7V2MessageValidator implements MessageValidator {
 				ConformanceContext c = getConformanceContext(cStreams);
 				ValueSetLibrary vsLib = valueSets != null ? getValueSetLibrary(IOUtils.toInputStream(valueSets)) : null;
 				ValidationProxy vp = new ValidationProxy(getValidationServiceName(), getProviderName());
-				EnhancedReport report = vp.validate(message, v2TestContext.getConformanceProfile().getXml(), c, vsLib,
-						conformanceProfielId, Context.valueOf(contextType));
+				EnhancedReport report;
+				Reader configuration = null;
+				Domain domain = domainService.findOneByKey(v2TestContext.getDomain());
+				if (domain != null) {
+					configuration = new StringReader(domain.getValidationConfiguration());
+				}
+				
+				if (configuration != null) {
+					report = vp.validate(message, v2TestContext.getConformanceProfile().getXml(), c, vsLib,
+							conformanceProfielId, Context.valueOf(contextType),configuration);
+				}else {
+					report = vp.validate(message, v2TestContext.getConformanceProfile().getXml(), c, vsLib,
+							conformanceProfielId, Context.valueOf(contextType));
+				}
 				if (report != null) {
 					Map<String, String> nav = command.getNav();
 					if (nav != null && !nav.isEmpty()) {
