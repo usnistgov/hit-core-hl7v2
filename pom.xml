@@ -20,6 +20,7 @@
 		<java.version>1.8</java.version>
 		<resourcesValidation.version>1.0.1</resourcesValidation.version>
 		<hl7v2Validation.version>1.4.2</hl7v2Validation.version>
+		<unifiedreport.version>1.0.8</unifiedreport.version>
 	</properties>
 
 	<dependencies>
@@ -58,12 +59,12 @@
         <dependency>
             <groupId>gov.nist.healthcare.hl7.v2.unifiedreport</groupId>
             <artifactId>validation-proxy</artifactId>
-            <version>1.0.7</version>
+            <version>${unifiedreport.version}</version>
         </dependency>
         <dependency>
             <groupId>gov.nist.healthcare.hl7.v2.unifiedreport</groupId>
             <artifactId>report-filter</artifactId>
-            <version>1.0.7</version>
+            <version>${unifiedreport.version}</version>
         </dependency>
         
         		<dependency>

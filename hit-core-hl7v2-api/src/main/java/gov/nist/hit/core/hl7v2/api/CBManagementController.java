@@ -160,6 +160,7 @@ public class CBManagementController {
 			throws Exception {
 		checkManagementSupport();
 		logger.info("Fetching all testplans of type=" + scope + "...");
+		List<TestPlan> results = null;
 		scope = scope == null ? TestScope.GLOBAL : scope;
 		String username = null;
 		Long userId = SessionContext.getCurrentUserId(request.getSession(false));
@@ -167,10 +168,16 @@ public class CBManagementController {
 			Account account = accountService.findOne(userId);
 			if (account != null) {
 				username = account.getUsername();
+				String email = account.getEmail();
+				if (userService.isAdminByEmail(email) || userService.isAdmin(username)) {
+					results = testPlanService.findShortAllByStageAndScopeAndDomain(TestingStage.CB, scope, domain);
+				}else {
+					results = testPlanService.findAllShortByStageAndUsernameAndScopeAndDomain(TestingStage.CB, username, scope,
+							domain);
+				}
 			}
 		}
-		return testPlanService.findAllShortByStageAndUsernameAndScopeAndDomain(TestingStage.CB, username, scope,
-				domain);
+		return results;
 	}
 
 	@ApiOperation(value = "Find a context-based test plan by its id", nickname = "getOneTestPlanById")

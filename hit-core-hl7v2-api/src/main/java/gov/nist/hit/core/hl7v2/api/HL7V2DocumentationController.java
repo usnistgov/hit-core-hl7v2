@@ -197,8 +197,8 @@ public class HL7V2DocumentationController {
       logger.info("Downloading ValueSetLibrary of element with id " + targetId);
       InputStream content = null;
       HL7V2TestContext testContext = testContextRepository.findOne(targetId);
-      String profile = testContext.getVocabularyLibrary().getXml();
-      content = IOUtils.toInputStream(profile, "UTF-8");
+      String valueSet = testContext.getVocabularyLibrary().getXml();
+      content = IOUtils.toInputStream(valueSet, "UTF-8");
       response.setContentType("application/xml");
       targetTitle = targetTitle + "-" + "Valuesets.xml";
       targetTitle = targetTitle.replaceAll(" ", "-");

@@ -572,8 +572,9 @@ public class HL7V2CFManagementController {
       if (testPlan == null) {
         throw new Exception("Profile Group could not be found");
       }
-      String username = auth.getName();
-      if (!username.equals(testPlan.getAuthorUsername())) {
+      String authUsername = auth.getName();
+      String username = testPlan.getAuthorUsername(); //
+      if (!authUsername.equals(username) && !userService.isAdmin(authUsername)) {
         throw new Exception("You do not have sufficient right to change this profile group");
       }
 

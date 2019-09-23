@@ -96,7 +96,10 @@ public abstract class HL7V2MessageValidator implements MessageValidator {
 				Reader configuration = null;
 				Domain domain = domainService.findOneByKey(v2TestContext.getDomain());
 				if (domain != null) {
-					configuration = new StringReader(domain.getValidationConfiguration());
+					String conf = domain.getValidationConfiguration();
+					if (conf != null) {
+						configuration = new StringReader(conf);
+					}				
 				}
 				
 				if (configuration != null) {

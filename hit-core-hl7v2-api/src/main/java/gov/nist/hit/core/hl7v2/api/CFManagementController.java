@@ -52,7 +52,9 @@ import gov.nist.hit.core.domain.ResourceType;
 import gov.nist.hit.core.domain.ResourceUploadAction;
 import gov.nist.hit.core.domain.ResourceUploadResult;
 import gov.nist.hit.core.domain.ResourceUploadStatus;
+import gov.nist.hit.core.domain.TestPlan;
 import gov.nist.hit.core.domain.TestScope;
+import gov.nist.hit.core.domain.TestingStage;
 import gov.nist.hit.core.domain.UploadedProfileModel;
 import gov.nist.hit.core.service.AccountService;
 import gov.nist.hit.core.service.AppInfoService;
@@ -138,7 +140,7 @@ public class CFManagementController {
     }
   }
 
-  @PreAuthorize("hasRole('tester')")
+  @PreAuthorize("hasRole('tester') or hasRole('admin')")
   @RequestMapping(value = "/testPlans", method = RequestMethod.GET, produces = "application/json")
   public List<CFTestPlan> getTestPlansByScopeAndDomain(
       @ApiParam(value = "the scope of the test plans",
@@ -146,15 +148,22 @@ public class CFManagementController {
       HttpServletRequest request, HttpServletResponse response,
       @RequestParam(required = true) String domain) throws Exception {
     checkManagementSupport();
+    List<CFTestPlan> results = null;
     String username = null;
     Long userId = SessionContext.getCurrentUserId(request.getSession(false));
     if (userId != null) {
       Account account = accountService.findOne(userId);
       if (account != null) {
         username = account.getUsername();
+        String email = account.getEmail();
+		if (userService.isAdminByEmail(email) || userService.isAdmin(username)) {
+			results = testPlanService.findShortAllByScopeAndDomain(scope, domain);
+		}else {
+			results = testPlanService.findShortAllByScopeAndUsernameAndDomain(scope, username, domain);
+		}
       }
     }
-    return testPlanService.findShortAllByScopeAndUsernameAndDomain(scope, username, domain);
+    return results;
   }
 
 
@@ -572,13 +581,13 @@ public class CFManagementController {
     if (testPlan == null)
       throw new Exception("No Profile Group(" + testPlanId + ") found");
 
-    if (!username.equals(testPlan.getAuthorUsername())) {
+    if (!username.equals(testPlan.getAuthorUsername()) && !userService.isAdmin(username)) {
       throw new NoUserFoundException("You do not have the permission to perform this task");
     }
 
     TestScope scope = testPlan.getScope();
     if (scope.equals(TestScope.GLOBAL)) {
-      throw new IllegalArgumentException("This Group is not already publicly available ");
+      throw new IllegalArgumentException("This Group is already publicly available");
     } else if (!userService.hasGlobalAuthorities(username)) {
       throw new IllegalArgumentException("You do not have the permission to perform this task");
     }
@@ -623,6 +632,87 @@ public class CFManagementController {
       }
     }
   }
+  
+  
+  @PreAuthorize("hasRole('tester')")
+  @RequestMapping(value = "/testPlans/{testPlanId}/unPublish", method = RequestMethod.POST,
+      produces = "application/json")
+  public ResourceUploadStatus approveUnPublishing(HttpServletRequest request,
+      @PathVariable("testPlanId") Long testPlanId, Principal p) throws Exception {
+    checkManagementSupport();
+    // String username = null;
+
+    String username = null;
+    Account account = null;
+    Long userId = SessionContext.getCurrentUserId(request.getSession(false));
+    if (userId != null) {
+      account = accountService.findOne(userId);
+      if (account != null) {
+        username = account.getUsername();
+      }
+    }
+    if (username == null)
+      throw new NoUserFoundException("User could not be found");
+
+    CFTestPlan testPlan = testPlanService.findOne(testPlanId);
+    if (testPlan == null)
+      throw new Exception("No Profile Group(" + testPlanId + ") found");
+
+    if (!username.equals(testPlan.getAuthorUsername()) && !userService.isAdmin(username)) {
+      throw new NoUserFoundException("You do not have the permission to perform this task");
+    }
+
+    TestScope scope = testPlan.getScope();
+    if (scope.equals(TestScope.USER)) {
+      throw new IllegalArgumentException("This Group is already private");
+    } else if (!userService.hasGlobalAuthorities(username)) {
+      throw new IllegalArgumentException("You do not have the permission to perform this task");
+    }
+    unPublish(testPlan);
+    testPlanService.save(testPlan);
+    ResourceUploadStatus result = new ResourceUploadStatus();
+    result.setType(ResourceType.TESTPLAN);
+    result.setAction(ResourceUploadAction.UPDATE);
+    result.setStatus(ResourceUploadResult.SUCCESS);
+    return result;
+  }
+
+  private void unPublish(CFTestPlan testPlan) {
+    testPlan.setScope(TestScope.USER);
+    Set<CFTestStep> testSteps = testPlan.getTestSteps();
+    if (testSteps != null) {
+      for (CFTestStep step : testSteps) {
+        step.setScope(TestScope.USER);
+      }
+    }
+    Set<CFTestStepGroup> testStepGroups = testPlan.getTestStepGroups();
+    if (testStepGroups != null) {
+      for (CFTestStepGroup testStepGroup : testStepGroups) {
+    	  unPublish(testStepGroup);
+      }
+    }
+  }
+
+  private void unPublish(CFTestStepGroup testStepGroup) {
+    testStepGroup.setScope(TestScope.USER);
+    Set<CFTestStep> testSteps = testStepGroup.getTestSteps();
+    if (testSteps != null) {
+      for (CFTestStep step : testSteps) {
+        step.setScope(TestScope.USER);
+      }
+    }
+    Set<CFTestStepGroup> testStepGroups = testStepGroup.getTestStepGroups();
+
+    if (testStepGroups != null) {
+      for (CFTestStepGroup testStepGr : testStepGroups) {
+        publish(testStepGr);
+      }
+    }
+  }
+  
+  
+  
+  
   //
   // @PreAuthorize("hasRole('tester')")
   // @RequestMapping(value = "/groups/delete", method = RequestMethod.POST,

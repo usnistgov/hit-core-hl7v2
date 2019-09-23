@@ -24,7 +24,9 @@
 
 package gov.nist.hit.core.hl7v2.service.message.unit;
 
+import org.junit.Ignore;
 
+@Ignore
 public class Er7MessageParserImplTest {
 
   // private static String er7Message;
