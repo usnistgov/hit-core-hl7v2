@@ -15,7 +15,7 @@
 
 	<properties>
 		<core.version>1.0.48</core.version>
-		<hitcore.version>1.0.26</hitcore.version>
+		<hitcore.version>1.0.27-SNAPSHOT</hitcore.version>
 		<additionalparam>-Xdoclint:none</additionalparam>
 		<java.version>1.8</java.version>
 		<resourcesValidation.version>1.0.1</resourcesValidation.version>

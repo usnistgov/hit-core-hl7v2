@@ -779,7 +779,7 @@ public class CBManagementController {
 			// ADD globals
 			if (Files.exists(Paths.get(directory + "/Global/Profiles"))) {
 				resourceLoader.addOrReplaceIntegrationProfile(directory + "/Global/Profiles/", domain, TestScope.USER,
-						u.getName(), false);
+						u.getName()	, false);
 			}
 			if (Files.exists(Paths.get(directory + "/Global/Constraints/"))) {
 				resourceLoader.addOrReplaceConstraints(directory + "/Global/Constraints/", domain, TestScope.USER,

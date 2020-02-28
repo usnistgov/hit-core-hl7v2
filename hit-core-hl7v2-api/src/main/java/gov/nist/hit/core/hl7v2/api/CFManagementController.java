@@ -435,7 +435,7 @@ public class CFManagementController {
       throw new NoUserFoundException("You do not have the permission to perform this task");
     }
 
-    if (!username.equals(testPlan.getAuthorUsername())) {
+    if (!username.equals(testPlan.getAuthorUsername()) && !userService.isAdmin(username)) {
       throw new NoUserFoundException("You do not have the permission to perform this task");
     }
 
