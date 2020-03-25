@@ -300,6 +300,7 @@ public class BundleHandlerImpl implements BundleHandler {
 		}
 		save.tcg = tp;
 		setSaveInstanceValues(dir, save, tp.getTestSteps(), tp);
+		save.tcg.updateUpdateDate();
 		return save;
 	}
 
@@ -314,6 +315,7 @@ public class BundleHandlerImpl implements BundleHandler {
 		}
 		save.tcg = tp;
 		setSaveInstanceValues(dir, save, tp.getTestSteps(), tp);
+		save.tcg.updateUpdateDate();
 		return save;
 	}
 

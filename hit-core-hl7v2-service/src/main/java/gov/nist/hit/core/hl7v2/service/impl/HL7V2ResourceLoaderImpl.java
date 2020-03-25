@@ -93,7 +93,6 @@ public class HL7V2ResourceLoaderImpl extends HL7V2ResourceLoader {
 	@Override
 	public List<ResourceUploadStatus> addOrReplaceValueSet(String rootPath, String domain, TestScope scope,
 			String authorUsername, boolean preloaded) {
-		System.out.println("AddOrReplace VS");
 
 		List<Resource> resources;
 		try {
@@ -125,7 +124,6 @@ public class HL7V2ResourceLoaderImpl extends HL7V2ResourceLoader {
 				vocabLibrary.setDomain(domain);
 				VocabularyLibrary exist = this.getVocabularyLibrary(vocabLibrary.getSourceId());
 				if (exist != null) {
-					System.out.println("Replace");
 					result.setAction(ResourceUploadAction.UPDATE);
 					vocabLibrary.setId(exist.getId());
 					vocabLibrary.setSourceId(exist.getSourceId());
@@ -148,7 +146,6 @@ public class HL7V2ResourceLoaderImpl extends HL7V2ResourceLoader {
 	@Override
 	public List<ResourceUploadStatus> addOrReplaceConstraints(String rootPath, String domain, TestScope scope,
 			String authorUsername, boolean preloaded) {
-		System.out.println("AddOrReplace Constraints");
 
 		List<Resource> resources;
 		try {
@@ -176,16 +173,14 @@ public class HL7V2ResourceLoaderImpl extends HL7V2ResourceLoader {
 			String content = FileUtil.getContent(resource);
 			try {
 				Constraints constraint = constraint(content, domain, scope, authorUsername, preloaded);
-				result.setId(constraint.getSourceId());
-				Constraints exist = this.getConstraints(constraint.getSourceId());
+				result.setId(constraint.getSourceId());				
+				Constraints exist = this.getConstraints(constraint.getSourceId());				
 				if (exist != null) {
-					System.out.println("Replace");
 					result.setAction(ResourceUploadAction.UPDATE);
 					constraint.setId(exist.getId());
 					constraint.setSourceId(exist.getSourceId());
 				} else {
 					result.setAction(ResourceUploadAction.ADD);
-					System.out.println("Add");
 				}
 
 				this.constraintsRepository.save(constraint);
@@ -202,9 +197,7 @@ public class HL7V2ResourceLoaderImpl extends HL7V2ResourceLoader {
 
 	@Override
 	public List<ResourceUploadStatus> addOrReplaceIntegrationProfile(String rootPath, String domain, TestScope scope,
-			String authorUsername, boolean preloaded) {
-		System.out.println("AddOrReplace integration profile");
-
+			String authorUsername, boolean preloaded) {	
 		List<Resource> resources;
 		try {
 			resources = this.getApiResources("*.xml", rootPath);
@@ -233,13 +226,11 @@ public class HL7V2ResourceLoaderImpl extends HL7V2ResourceLoader {
 				result.setId(integrationP.getSourceId());
 				IntegrationProfile exist = this.integrationProfileRepository.findBySourceId(integrationP.getSourceId());
 				if (exist != null) {
-					System.out.println("Replace");
 					result.setAction(ResourceUploadAction.UPDATE);
 					integrationP.setId(exist.getId());
 					integrationP.setSourceId(exist.getSourceId());
 				} else {
 					result.setAction(ResourceUploadAction.ADD);
-					System.out.println("Add");
 				}
 				this.integrationProfileRepository.save(integrationP);
 				result.setStatus(ResourceUploadResult.SUCCESS);
@@ -313,24 +304,26 @@ public class HL7V2ResourceLoaderImpl extends HL7V2ResourceLoader {
 				throw new RuntimeException("Failed to parse the value sets at " + path);
 			}
 		}
-
-		if (constraintId != null && !"".equals(constraintId.textValue())) {
-			Constraints co = getConstraints(constraintId.textValue());
+	
+		if (constraintId != null && !"".equals(constraintId.textValue())) {		
+			Constraints co = getConstraints(constraintId.textValue());		
 			co.setDomain(domain);
 			co.setScope(scope);
 			co.setAuthorUsername(authorUsername);
 			co.setPreloaded(preloaded);
 			testContext.setConstraints(co);
+			
 		}
-
 		try {
 			Resource resource = this.getResource(path + CONSTRAINTS_FILE_PATTERN, rootPath);
+			
 			if (resource != null) {
 				String content = IOUtils.toString(resource.getInputStream());
 				content = packagingHandler.changeConstraintId(content);
 				Constraints co = createAdditionalConstraint(content, domain, scope, authorUsername, preloaded);
 				testContext.setAddditionalConstraints(co);
 			}
+		
 		} catch (Exception e) {
 			throw new RuntimeException("Failed to parse the constraints at " + path);
 		}
@@ -341,21 +334,27 @@ public class HL7V2ResourceLoaderImpl extends HL7V2ResourceLoader {
 			testContext.setMessage(message(FileUtil.getContent(getResource(path + "Message.text", rootPath)), domain,
 					scope, authorUsername, preloaded));
 		}
+		
 
 		if (dqa != null && !"".equals(dqa.textValue())) {
 			testContext.setDqa(dqa.booleanValue());
 		}
+		
+	
 
 		if (messageId != null) {
 			try {
 				ConformanceProfile conformanceProfile = new ConformanceProfile();
 				IntegrationProfile integrationProfile = getIntegrationProfile(messageId.textValue());
+				
 				conformanceProfile.setJson(jsonConformanceProfile(integrationProfile.getXml(), messageId.textValue(),
 						testContext.getConstraints() != null ? testContext.getConstraints().getXml() : null,
 						testContext.getAddditionalConstraints() != null
 								? testContext.getAddditionalConstraints().getXml() : null));
+			
 				conformanceProfile
 						.setXml(getConformanceProfileContent(integrationProfile.getXml(), messageId.textValue()));
+				
 				conformanceProfile.setSourceId(messageId.textValue());
 				// conformanceProfile.setIntegrationProfileId(integrationProfile.getId());
 				// conformanceProfile.setSourceId(messageId.textValue());
@@ -364,6 +363,9 @@ public class HL7V2ResourceLoaderImpl extends HL7V2ResourceLoader {
 				conformanceProfile.setAuthorUsername(authorUsername);
 				conformanceProfile.setPreloaded(preloaded);
 				testContext.setConformanceProfile(conformanceProfile);
+			
+				
+				
 			} catch (ProfileParserException e) {
 				throw new RuntimeException("Failed to parse integrationProfile at " + path);
 			}
@@ -386,8 +388,7 @@ public class HL7V2ResourceLoaderImpl extends HL7V2ResourceLoader {
 				conformanceProfile.setAuthorUsername(authorUsername);
 				conformanceProfile.setPreloaded(preloaded);
 				conformanceProfile.setSourceId(messageID);
-				testContext.setConformanceProfile(conformanceProfile);
-
+				testContext.setConformanceProfile(conformanceProfile);		
 			} catch (Exception e) {
 				throw new RuntimeException("Failed to parse integrationProfile at " + path);
 			}

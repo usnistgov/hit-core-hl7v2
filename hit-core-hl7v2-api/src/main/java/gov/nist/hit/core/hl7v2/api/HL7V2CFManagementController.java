@@ -76,6 +76,7 @@ import gov.nist.hit.core.service.AppInfoService;
 import gov.nist.hit.core.service.BundleHandler;
 import gov.nist.hit.core.service.CFTestPlanService;
 import gov.nist.hit.core.service.CFTestStepGroupService;
+import gov.nist.hit.core.service.CFTestStepService;
 import gov.nist.hit.core.service.ProfileParser;
 import gov.nist.hit.core.service.UserIdService;
 import gov.nist.hit.core.service.UserService;
@@ -96,8 +97,8 @@ public class HL7V2CFManagementController {
 
   static final Logger logger = LoggerFactory.getLogger(HL7V2CFManagementController.class);
   
-  @Value("${UPLOADED_RESOURCE_BUNDLE:/sites/data/uploaded_resource_bundles}")
-  private String UPLOADED_RESOURCE_BUNDLE;
+//  @Value("${UPLOADED_RESOURCE_BUNDLE:/sites/data/uploaded_resource_bundles}")
+//  private String UPLOADED_RESOURCE_BUNDLE;
 
   private String CF_RESOURCE_BUNDLE_DIR;
   
@@ -136,6 +137,8 @@ public class HL7V2CFManagementController {
   @Autowired
   private CFTestPlanService testPlanService;
 
+  @Autowired
+  private CFTestStepService testStepService;
 
   @Autowired
   private AppInfoService appInfoService;
@@ -145,7 +148,7 @@ public class HL7V2CFManagementController {
 
 	@PostConstruct
 	  public void init() {
-	    CF_RESOURCE_BUNDLE_DIR = UPLOADED_RESOURCE_BUNDLE + "/cf";
+	    CF_RESOURCE_BUNDLE_DIR = appInfoService.getUploadsFolderPath() + "/cf";
 	  }
 
   private void checkManagementSupport() throws Exception {
@@ -597,8 +600,8 @@ public class HL7V2CFManagementController {
         vsRepository.save(si.vs);
         si.tcg.setAuthorUsername(username);
         testPlanService.save((CFTestPlan) si.tcg);
-        FileUtils
-            .deleteDirectory(new File(CF_RESOURCE_BUNDLE_DIR + "/" + username + "/" + wrapper.getToken()));
+        testPlanService.removeCacheElement(testPlan.getId());
+        FileUtils.deleteDirectory(new File(CF_RESOURCE_BUNDLE_DIR + "/" + username + "/" + wrapper.getToken()));
       } else {
         testPlanService.save(testPlan);
       }

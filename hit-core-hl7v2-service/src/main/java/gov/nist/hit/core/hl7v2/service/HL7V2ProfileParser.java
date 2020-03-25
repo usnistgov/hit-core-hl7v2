@@ -207,6 +207,7 @@ public abstract class HL7V2ProfileParser extends ProfileParser {
 		model.setDatatypes(this.datatypesMap);
 		model.setSegments(this.segmentsMap);
 		return message;
+		
 	}
 
 	/**
