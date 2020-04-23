@@ -61,6 +61,7 @@ import gov.nist.hit.core.domain.Message;
 import gov.nist.hit.core.domain.ResourceUploadResult;
 import gov.nist.hit.core.domain.TestCaseWrapper;
 import gov.nist.hit.core.domain.TestContext;
+import gov.nist.hit.core.domain.TestPlan;
 import gov.nist.hit.core.domain.TestScope;
 import gov.nist.hit.core.domain.UploadStatus;
 import gov.nist.hit.core.domain.UploadedProfileModel;
@@ -764,12 +765,16 @@ public class HL7V2CFManagementController {
         csRepository.save(si.ct);
         vsRepository.save(si.vs);
         si.tcg.setAuthorUsername(username);
-        testStepGroupService.save((CFTestStepGroup) si.tcg);
+        testStepGroupService.save((CFTestStepGroup) si.tcg);       
+        
         FileUtils
             .deleteDirectory(new File(CF_RESOURCE_BUNDLE_DIR + "/" + username + "/" + wrapper.getToken()));
       } else {
         testStepGroupService.save(testStepGroup);
       }
+      CFTestPlan tp = testPlanService.findCFTestPlanContainingAbstractTestCase(testStepGroup);
+      tp.updateUpdateDate();
+      testPlanService.save(tp);
       return new UploadStatus(ResourceUploadResult.SUCCESS, "Profile Group save successfully",
           testStepGroup.getId());
 

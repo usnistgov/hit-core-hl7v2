@@ -140,31 +140,30 @@ public class CFManagementController {
     }
   }
 
-  @PreAuthorize("hasRole('tester') or hasRole('admin')")
-  @RequestMapping(value = "/testPlans", method = RequestMethod.GET, produces = "application/json")
-  public List<CFTestPlan> getTestPlansByScopeAndDomain(
-      @ApiParam(value = "the scope of the test plans",
-          required = false) @RequestParam(required = true) TestScope scope,
-      HttpServletRequest request, HttpServletResponse response,
-      @RequestParam(required = true) String domain) throws Exception {
-    checkManagementSupport();
-    List<CFTestPlan> results = null;
-    String username = null;
-    Long userId = SessionContext.getCurrentUserId(request.getSession(false));
-    if (userId != null) {
-      Account account = accountService.findOne(userId);
-      if (account != null) {
-        username = account.getUsername();
-        String email = account.getEmail();
-		if (userService.isAdminByEmail(email) || userService.isAdmin(username)) {
-			results = testPlanService.findShortAllByScopeAndDomain(scope, domain);
-		}else {
-			results = testPlanService.findShortAllByScopeAndUsernameAndDomain(scope, username, domain);
+	@PreAuthorize("hasRole('tester') or hasRole('admin')")
+	@RequestMapping(value = "/testPlans", method = RequestMethod.GET, produces = "application/json")
+	public List<CFTestPlan> getTestPlansByScopeAndDomain(
+			@ApiParam(value = "the scope of the test plans", required = false) @RequestParam(required = true) TestScope scope,
+			HttpServletRequest request, HttpServletResponse response, @RequestParam(required = true) String domain)
+			throws Exception {
+		checkManagementSupport();
+		List<CFTestPlan> results = null;
+		String username = null;
+		Long userId = SessionContext.getCurrentUserId(request.getSession(false));
+		if (userId != null) {
+			Account account = accountService.findOne(userId);
+			if (account != null) {
+				username = account.getUsername();
+				String email = account.getEmail();
+				if (userService.isAdminByEmail(email) || userService.isAdmin(username)) {
+					results = testPlanService.findShortAllByScopeAndDomain(scope, domain);
+				} else {
+					results = testPlanService.findShortAllByScopeAndUsernameAndDomain(scope, username, domain);
+				}
+			}
 		}
-      }
-    }
-    return results;
-  }
+		return results;
+	}
 
 
   @PreAuthorize("hasRole('tester')")
