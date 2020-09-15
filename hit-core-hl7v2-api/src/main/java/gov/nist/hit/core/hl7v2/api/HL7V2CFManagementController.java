@@ -422,7 +422,7 @@ public class HL7V2CFManagementController {
     try {
     		String filename = part.getOriginalFilename();
 		String extension = filename.substring(filename.lastIndexOf(".") + 1);
-		if (!extension.equalsIgnoreCase("zip")) {
+		if (!extension.equalsIgnoreCase("zip")) { 
 			throw new MessageUploadException(
 		            "Unsupported content type. Supported content types are: '.zip' ");
 		}
