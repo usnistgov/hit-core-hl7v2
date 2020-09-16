@@ -69,6 +69,38 @@ public class HL7V2ResourceLoaderImpl extends HL7V2ResourceLoader {
 	@PersistenceContext(unitName = "base-tool")
 	protected EntityManager entityManager;
 
+	
+	
+//	@Override
+//	public void clearDB() {
+//		appInfoRepository.deleteAll();
+//		domainService.deletePreloaded();
+//		validationResultRepository.deleteAll();
+//		
+//		cbTestPlanService.deleteAllPreloaded();
+//		cfTestPlanService.deleteAllPreloaded();
+//		
+//		testCaseGroupService.deleteAllPreloaded();
+//		cfTestStepGroupRepository.deletePreloaded();
+//		
+//		testCaseService.deleteAllPreloaded();
+//		
+//		testStepService.deleteAllPreloaded();
+//		
+//		testContextRepository.deletePreloaded();
+//
+//		vocabularyLibraryRepository.deletePreloaded();
+//		constraintsRepository.deletePreloaded();
+//		integrationProfileRepository.deletePreloaded();
+//		
+//		testCaseDocumentationRepository.deleteAll();
+//		transportFormsRepository.deleteAll();
+//		documentRepository.deleteAll();
+//		transportMessageRepository.deleteAll();
+//		transactionRepository.deleteAll();
+//		
+//	}
+	
 	@Override
 	protected VocabularyLibrary getVocabularyLibrary(String id) throws IOException {
 		return this.vocabularyLibraryRepository.findOneBySourceId(id);
