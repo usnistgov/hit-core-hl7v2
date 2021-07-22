@@ -36,10 +36,10 @@ public class HL7V2ValidationConfigurationServiceImpl extends HL7V2ValidationConf
 						StringReader sr = new StringReader(conf);			
 						config = ConfigFactory.parseReader(sr).resolve();
 					} else {//default config
-						config = ConfigFactory.load("reference.conf").resolve();
+						config = ConfigFactory.load("application.conf").resolve();
 					}
 				} else {//default config
-					config = ConfigFactory.load("reference.conf").resolve();
+					config = ConfigFactory.load("application.conf").resolve();
 	
 				}
 				HL7V2ValidationClassifications classification = configToHL7V2ValidationClassifications(config);
@@ -55,7 +55,7 @@ public class HL7V2ValidationConfigurationServiceImpl extends HL7V2ValidationConf
 	public HL7V2ValidationClassifications getDefaultClassifications() {
 		try {
 			Config config;	
-			config = ConfigFactory.load("reference.conf").resolve();
+			config = ConfigFactory.load("application.conf").resolve();
 			HL7V2ValidationClassifications classification = configToHL7V2ValidationClassifications(config);
 			return classification;
 		}catch(Exception e) {
@@ -70,115 +70,115 @@ public class HL7V2ValidationConfigurationServiceImpl extends HL7V2ValidationConf
 			HL7V2ValidationClassifications classification = new HL7V2ValidationClassifications();
 
 			if (config.hasPath("report.length-spec-error-no-valid.classification")) {
-				classification.getLengthSpecErrorNoValid().setClassfication(HL7V2ValidationClassificationEnum.valueOf(config.getString("report.length-spec-error-no-valid.classification").toUpperCase()));
+				classification.getLengthSpecErrorNoValid().setClassfication(HL7V2ValidationClassificationEnum.fromText(config.getString("report.length-spec-error-no-valid.classification").toUpperCase()));
 			}
 			if (config.hasPath("report.length-spec-error-xor.classification")) {
-				classification.getLengthSpecErrorXor().setClassfication(HL7V2ValidationClassificationEnum.valueOf(config.getString("report.length-spec-error-xor.classification").toUpperCase()));
+				classification.getLengthSpecErrorXor().setClassfication(HL7V2ValidationClassificationEnum.fromText(config.getString("report.length-spec-error-xor.classification").toUpperCase()));
 			}
 			if (config.hasPath("report.r-usage.classification")) {
-				classification.getrUsage().setClassfication(HL7V2ValidationClassificationEnum.valueOf(config.getString("report.r-usage.classification").toUpperCase()));
+				classification.getrUsage().setClassfication(HL7V2ValidationClassificationEnum.fromText(config.getString("report.r-usage.classification").toUpperCase()));
 			}
 			if (config.hasPath("report.x-usage.classification")) {
-				classification.getxUsage().setClassfication(HL7V2ValidationClassificationEnum.valueOf(config.getString("report.x-usage.classification").toUpperCase()));
+				classification.getxUsage().setClassfication(HL7V2ValidationClassificationEnum.fromText(config.getString("report.x-usage.classification").toUpperCase()));
 			}
 			if (config.hasPath("report.w-usage.classification")) {
-				classification.getwUsage().setClassfication(HL7V2ValidationClassificationEnum.valueOf(config.getString("report.w-usage.classification").toUpperCase()));
+				classification.getwUsage().setClassfication(HL7V2ValidationClassificationEnum.fromText(config.getString("report.w-usage.classification").toUpperCase()));
 			}
 			if (config.hasPath("report.re-usage.classification")) {
-				classification.getReUsage().setClassfication(HL7V2ValidationClassificationEnum.valueOf(config.getString("report.re-usage.classification").toUpperCase()));
+				classification.getReUsage().setClassfication(HL7V2ValidationClassificationEnum.fromText(config.getString("report.re-usage.classification").toUpperCase()));
 			}
 			if (config.hasPath("report.o-usage.classification")) {
-				classification.getoUsage().setClassfication(HL7V2ValidationClassificationEnum.valueOf(config.getString("report.o-usage.classification").toUpperCase()));
+				classification.getoUsage().setClassfication(HL7V2ValidationClassificationEnum.fromText(config.getString("report.o-usage.classification").toUpperCase()));
 			}
 			if (config.hasPath("report.cardinality.classification")) {
-				classification.getCardinality().setClassfication(HL7V2ValidationClassificationEnum.valueOf(config.getString("report.cardinality.classification").toUpperCase()));
+				classification.getCardinality().setClassfication(HL7V2ValidationClassificationEnum.fromText(config.getString("report.cardinality.classification").toUpperCase()));
 			}
 			if (config.hasPath("report.null-cardinality.classification")) {
-				classification.getNullCardinality().setClassfication(HL7V2ValidationClassificationEnum.valueOf(config.getString("report.null-cardinality.classification").toUpperCase()));
+				classification.getNullCardinality().setClassfication(HL7V2ValidationClassificationEnum.fromText(config.getString("report.null-cardinality.classification").toUpperCase()));
 			}
 			if (config.hasPath("report.length.classification")) {
-				classification.getLength().setClassfication(HL7V2ValidationClassificationEnum.valueOf(config.getString("report.length.classification").toUpperCase()));
+				classification.getLength().setClassfication(HL7V2ValidationClassificationEnum.fromText(config.getString("report.length.classification").toUpperCase()));
 			}
 			if (config.hasPath("report.format.classification")) {
-				classification.getFormat().setClassfication(HL7V2ValidationClassificationEnum.valueOf(config.getString("report.format.classification").toUpperCase()));
+				classification.getFormat().setClassfication(HL7V2ValidationClassificationEnum.fromText(config.getString("report.format.classification").toUpperCase()));
 			}
 			if (config.hasPath("report.extra.classification")) {
-				classification.getExtra().setClassfication(HL7V2ValidationClassificationEnum.valueOf(config.getString("report.extra.classification").toUpperCase()));
+				classification.getExtra().setClassfication(HL7V2ValidationClassificationEnum.fromText(config.getString("report.extra.classification").toUpperCase()));
 			}
 			if (config.hasPath("report.unescaped.classification")) {
-				classification.getUnescaped().setClassfication(HL7V2ValidationClassificationEnum.valueOf(config.getString("report.unescaped.classification").toUpperCase()));
+				classification.getUnescaped().setClassfication(HL7V2ValidationClassificationEnum.fromText(config.getString("report.unescaped.classification").toUpperCase()));
 			}
 			if (config.hasPath("report.unexpected.classification")) {
-				classification.getUnexpected().setClassfication(HL7V2ValidationClassificationEnum.valueOf(config.getString("report.unexpected.classification").toUpperCase()));
+				classification.getUnexpected().setClassfication(HL7V2ValidationClassificationEnum.fromText(config.getString("report.unexpected.classification").toUpperCase()));
 			}
 			if (config.hasPath("report.invalid.classification")) {
-				classification.getInvalid().setClassfication(HL7V2ValidationClassificationEnum.valueOf(config.getString("report.invalid.classification").toUpperCase()));
+				classification.getInvalid().setClassfication(HL7V2ValidationClassificationEnum.fromText(config.getString("report.invalid.classification").toUpperCase()));
 			}
 			if (config.hasPath("report.unresolved-field.classification")) {
-				classification.getUnresolvedField().setClassfication(HL7V2ValidationClassificationEnum.valueOf(config.getString("report.unresolved-field.classification").toUpperCase()));
+				classification.getUnresolvedField().setClassfication(HL7V2ValidationClassificationEnum.fromText(config.getString("report.unresolved-field.classification").toUpperCase()));
 			}
 			if (config.hasPath("report.coconstraint-failure.classification")) {
-				classification.getCoconstraintFailure().setClassfication(HL7V2ValidationClassificationEnum.valueOf(config.getString("report.coconstraint-failure.classification").toUpperCase()));
+				classification.getCoconstraintFailure().setClassfication(HL7V2ValidationClassificationEnum.fromText(config.getString("report.coconstraint-failure.classification").toUpperCase()));
 			}
 			if (config.hasPath("report.coconstraint-success.classification")) {
-				classification.getCoconstraintSuccess().setClassfication(HL7V2ValidationClassificationEnum.valueOf(config.getString("report.coconstraint-success.classification").toUpperCase()));
+				classification.getCoconstraintSuccess().setClassfication(HL7V2ValidationClassificationEnum.fromText(config.getString("report.coconstraint-success.classification").toUpperCase()));
 			}
 			if (config.hasPath("report.highlevel-content.classification")) {
-				classification.getHighlevelContent().setClassfication(HL7V2ValidationClassificationEnum.valueOf(config.getString("report.highlevel-content.classification").toUpperCase()));
+				classification.getHighlevelContent().setClassfication(HL7V2ValidationClassificationEnum.fromText(config.getString("report.highlevel-content.classification").toUpperCase()));
 			}
 			if (config.hasPath("report.constraint-failure.classification")) {
-				classification.getConstraintFailure().setClassfication(HL7V2ValidationClassificationEnum.valueOf(config.getString("report.constraint-failure.classification").toUpperCase()));
+				classification.getConstraintFailure().setClassfication(HL7V2ValidationClassificationEnum.fromText(config.getString("report.constraint-failure.classification").toUpperCase()));
 			}
 			if (config.hasPath("report.constraint-success.classification")) {
-				classification.getConstraintSuccess().setClassfication(HL7V2ValidationClassificationEnum.valueOf(config.getString("report.constraint-success.classification").toUpperCase()));
+				classification.getConstraintSuccess().setClassfication(HL7V2ValidationClassificationEnum.fromText(config.getString("report.constraint-success.classification").toUpperCase()));
 			}
 			if (config.hasPath("report.constraint-spec-error.classification")) {
-				classification.getConstraintSpecError().setClassfication(HL7V2ValidationClassificationEnum.valueOf(config.getString("report.constraint-spec-error.classification").toUpperCase()));
+				classification.getConstraintSpecError().setClassfication(HL7V2ValidationClassificationEnum.fromText(config.getString("report.constraint-spec-error.classification").toUpperCase()));
 			}
 			if (config.hasPath("report.content-failure.classification")) {
-				classification.getContentFailure().setClassfication(HL7V2ValidationClassificationEnum.valueOf(config.getString("report.content-failure.classification").toUpperCase()));
+				classification.getContentFailure().setClassfication(HL7V2ValidationClassificationEnum.fromText(config.getString("report.content-failure.classification").toUpperCase()));
 			}
 			if (config.hasPath("report.content-success.classification")) {
-				classification.getContentSuccess().setClassfication(HL7V2ValidationClassificationEnum.valueOf(config.getString("report.content-success.classification").toUpperCase()));
+				classification.getContentSuccess().setClassfication(HL7V2ValidationClassificationEnum.fromText(config.getString("report.content-success.classification").toUpperCase()));
 			}
 			if (config.hasPath("report.content-spec-error.classification")) {
-				classification.getContentSpecError().setClassfication(HL7V2ValidationClassificationEnum.valueOf(config.getString("report.content-spec-error.classification").toUpperCase()));
+				classification.getContentSpecError().setClassfication(HL7V2ValidationClassificationEnum.fromText(config.getString("report.content-spec-error.classification").toUpperCase()));
 			}
 			if (config.hasPath("report.predicate-success.classification")) {
-				classification.getPredicateSuccess().setClassfication(HL7V2ValidationClassificationEnum.valueOf(config.getString("report.predicate-success.classification").toUpperCase()));
+				classification.getPredicateSuccess().setClassfication(HL7V2ValidationClassificationEnum.fromText(config.getString("report.predicate-success.classification").toUpperCase()));
 			}
 			if (config.hasPath("report.predicate-failure.classification")) {
-				classification.getPredicateFailure().setClassfication(HL7V2ValidationClassificationEnum.valueOf(config.getString("report.predicate-failure.classification").toUpperCase()));
+				classification.getPredicateFailure().setClassfication(HL7V2ValidationClassificationEnum.fromText(config.getString("report.predicate-failure.classification").toUpperCase()));
 			}
 			if (config.hasPath("report.predicate-spec-error.classification")) {
-				classification.getPredicateSpecError().setClassfication(HL7V2ValidationClassificationEnum.valueOf(config.getString("report.predicate-spec-error.classification").toUpperCase()));
+				classification.getPredicateSpecError().setClassfication(HL7V2ValidationClassificationEnum.fromText(config.getString("report.predicate-spec-error.classification").toUpperCase()));
 			}
 			if (config.hasPath("report.evs.classification")) {
-				classification.getEvs().setClassfication(HL7V2ValidationClassificationEnum.valueOf(config.getString("report.evs.classification").toUpperCase()));
+				classification.getEvs().setClassfication(HL7V2ValidationClassificationEnum.fromText(config.getString("report.evs.classification").toUpperCase()));
 			}
 			if (config.hasPath("report.pvs.classification")) {
-				classification.getPvs().setClassfication(HL7V2ValidationClassificationEnum.valueOf(config.getString("report.pvs.classification").toUpperCase()));
+				classification.getPvs().setClassfication(HL7V2ValidationClassificationEnum.fromText(config.getString("report.pvs.classification").toUpperCase()));
 			}
 			if (config.hasPath("report.code-not-found.classification")) {
-				classification.getCodeNotFound().setClassfication(HL7V2ValidationClassificationEnum.valueOf(config.getString("report.code-not-found.classification").toUpperCase()));
+				classification.getCodeNotFound().setClassfication(HL7V2ValidationClassificationEnum.fromText(config.getString("report.code-not-found.classification").toUpperCase()));
 			}
 			if (config.hasPath("report.vs-not-found.classification")) {
-				classification.getVsNotFound().setClassfication(HL7V2ValidationClassificationEnum.valueOf(config.getString("report.vs-not-found.classification").toUpperCase()));
+				classification.getVsNotFound().setClassfication(HL7V2ValidationClassificationEnum.fromText(config.getString("report.vs-not-found.classification").toUpperCase()));
 			}
 			if (config.hasPath("report.empty-vs.classification")) {
-				classification.getEmptyVs().setClassfication(HL7V2ValidationClassificationEnum.valueOf(config.getString("report.empty-vs.classification").toUpperCase()));
+				classification.getEmptyVs().setClassfication(HL7V2ValidationClassificationEnum.fromText(config.getString("report.empty-vs.classification").toUpperCase()));
 			}
 			if (config.hasPath("report.vs-error.classification")) {
-				classification.getVsError().setClassfication(HL7V2ValidationClassificationEnum.valueOf(config.getString("report.vs-error.classification").toUpperCase()));
+				classification.getVsError().setClassfication(HL7V2ValidationClassificationEnum.fromText(config.getString("report.vs-error.classification").toUpperCase()));
 			}
 			if (config.hasPath("report.binding-location.classification")) {
-				classification.getBindingLocation().setClassfication(HL7V2ValidationClassificationEnum.valueOf(config.getString("report.binding-location.classification").toUpperCase()));
+				classification.getBindingLocation().setClassfication(HL7V2ValidationClassificationEnum.fromText(config.getString("report.binding-location.classification").toUpperCase()));
 			}
 			if (config.hasPath("report.vs-no-validation.classification")) {
-				classification.getVsNoValidation().setClassfication(HL7V2ValidationClassificationEnum.valueOf(config.getString("report.vs-no-validation.classification").toUpperCase()));
+				classification.getVsNoValidation().setClassfication(HL7V2ValidationClassificationEnum.fromText(config.getString("report.vs-no-validation.classification").toUpperCase()));
 			}
 			if (config.hasPath("report.coded-element.classification")) {
-				classification.getCodedElement().setClassfication(HL7V2ValidationClassificationEnum.valueOf(config.getString("report.coded-element.classification").toUpperCase()));
+				classification.getCodedElement().setClassfication(HL7V2ValidationClassificationEnum.fromText(config.getString("report.coded-element.classification").toUpperCase()));
 			}
 			return classification;
 		}catch(Exception e) {

@@ -280,7 +280,8 @@ public class HL7V2ResourceLoaderImpl extends HL7V2ResourceLoader {
 	public TestCaseDocument generateTestCaseDocument(TestContext c) throws IOException {
 		HLV2TestCaseDocument doc = new HLV2TestCaseDocument();
 		if (c != null) {
-			HL7V2TestContext context = testContextRepository.findOne(c.getId());
+//			HL7V2TestContext context = testContextRepository.findOne(c.getId());
+			HL7V2TestContext context = (HL7V2TestContext) c;
 			doc.setExMsgPresent(context.getMessage() != null && context.getMessage().getContent() != null);
 			doc.setXmlConfProfilePresent(
 					context.getConformanceProfile() != null && context.getConformanceProfile().getJson() != null);

@@ -21,6 +21,7 @@ import java.util.Map;
 import org.apache.commons.io.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import gov.nist.auth.hit.core.domain.Account;
 import gov.nist.healthcare.unified.enums.Context;
 import gov.nist.healthcare.unified.model.EnhancedReport;
 import gov.nist.healthcare.unified.proxy.ValidationProxy;
@@ -29,11 +30,14 @@ import gov.nist.hit.core.domain.MessageValidationCommand;
 import gov.nist.hit.core.domain.MessageValidationResult;
 import gov.nist.hit.core.domain.TestContext;
 import gov.nist.hit.core.hl7v2.domain.HL7V2TestContext;
+import gov.nist.hit.core.service.AccountService;
 import gov.nist.hit.core.service.DomainService;
 import gov.nist.hit.core.service.MessageValidator;
 import gov.nist.hit.core.service.ValidationLogService;
 import gov.nist.hit.core.service.exception.MessageException;
 import gov.nist.hit.core.service.exception.MessageValidationException;
+import gov.nist.hit.core.service.exception.ValidationReportException;
+import gov.nist.hit.logging.HITStatsLogger;
 import hl7.v2.validation.content.ConformanceContext;
 import hl7.v2.validation.content.DefaultConformanceContext;
 import hl7.v2.validation.vs.ValueSetLibrary;
@@ -46,6 +50,9 @@ public abstract class HL7V2MessageValidator implements MessageValidator {
 	
 	@Autowired
 	private DomainService domainService;
+	
+	@Autowired
+	private AccountService accountService;
 
 	@Override
 	public MessageValidationResult validate(TestContext testContext, MessageValidationCommand command)
@@ -102,12 +109,28 @@ public abstract class HL7V2MessageValidator implements MessageValidator {
 					}				
 				}
 				
+				
+				Account account = null;
+				String username = accountService.findOne(command.getUserId()) != null ? accountService.findOne(command.getUserId()).getUsername() : "guest";
+				String organization = "";
+				String operation = "message validation";
+				
+					
+								
 				if (configuration != null) {
 					report = vp.validate(message, v2TestContext.getConformanceProfile().getXml(), c, vsLib,
 							conformanceProfielId, Context.valueOf(contextType),configuration);
+					Map<String, String> env = System.getenv();			       
+			        for (Map.Entry<String, String> entry : env.entrySet()) {
+			            System.out.println(entry.getKey() + " : " + entry.getValue());
+			        }
+					
+					HITStatsLogger.log(username, organization, operation, testContext.getDomain());
+					
 				}else {
 					report = vp.validate(message, v2TestContext.getConformanceProfile().getXml(), c, vsLib,
 							conformanceProfielId, Context.valueOf(contextType));
+					HITStatsLogger.log(username, organization, operation, testContext.getDomain());
 				}
 				if (report != null) {
 					Map<String, String> nav = command.getNav();

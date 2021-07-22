@@ -18,6 +18,11 @@
 			<artifactId>hit-core-hl7v2-repo</artifactId>
 			<version>${project.version}</version>
 		</dependency>
+		 <dependency>
+		    <groupId>gov.nist.hit.hl7</groupId>
+		    <artifactId>hit-stats-logger</artifactId>
+		    <version>1.0.0</version>
+		  </dependency>
 
 
 		<dependency>
