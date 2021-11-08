@@ -18,7 +18,7 @@
 		<additionalparam>-Xdoclint:none</additionalparam>
 		<java.version>1.8</java.version>
 		<resourcesValidation.version>1.0.1</resourcesValidation.version>
-		<hl7v2Validation.version>1.5.0</hl7v2Validation.version>
+		<hl7v2Validation.version>1.5.1</hl7v2Validation.version>
 		<unifiedreport.version>1.0.9-SNAPSHOT</unifiedreport.version>
 	</properties>
 
@@ -76,7 +76,7 @@
 		<dependency>
 			<groupId>gov.nist.hit.hl7</groupId>
 			<artifactId>profile-validation</artifactId>
-			<version>1.0.1-SNAPSHOT</version>
+			<version>1.0.1</version>
 			<exclusions>
 				<exclusion>
 					<groupId>gov.nist</groupId>
