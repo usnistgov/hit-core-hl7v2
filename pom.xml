@@ -18,8 +18,8 @@
 		<additionalparam>-Xdoclint:none</additionalparam>
 		<java.version>1.8</java.version>
 		<resourcesValidation.version>1.0.1</resourcesValidation.version>
-		<hl7v2Validation.version>1.5.1</hl7v2Validation.version>
-		<unifiedreport.version>1.0.9-SNAPSHOT</unifiedreport.version>
+		<hl7v2Validation.version>1.5.3</hl7v2Validation.version>
+		<unifiedreport.version>1.0.10-SNAPSHOT</unifiedreport.version>
 	</properties>
 
 	<dependencies>
@@ -76,7 +76,7 @@
 		<dependency>
 			<groupId>gov.nist.hit.hl7</groupId>
 			<artifactId>profile-validation</artifactId>
-			<version>1.0.1</version>
+			<version>1.5.3-SNAPSHOT</version>
 			<exclusions>
 				<exclusion>
 					<groupId>gov.nist</groupId>
@@ -112,7 +112,7 @@
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-compiler-plugin</artifactId>
-					<version>2.5.1</version>
+					<version>3.8.1</version>
 					<configuration>
 						<source>${java.version}</source>
 						<target>${java.version}</target>

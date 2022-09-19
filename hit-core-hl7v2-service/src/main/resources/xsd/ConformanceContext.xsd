@@ -2,7 +2,6 @@
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
 	
 	<xs:include schemaLocation="Expressions.xsd"/>
-	<xs:include schemaLocation="Commons.xsd" />
 	
 	<!--  =============================================================================================================
           =========================       MetaData Definition                   =======================================
@@ -116,6 +115,7 @@
 		<xs:attribute name="ID" type="NonEmptyString" use="required"/>
 		<xs:attribute name="Classification" type="ClassificationType" use="optional"/>
 		<xs:attribute name="Target" type="PathType" use="optional"/>
+		<xs:attribute name="Strength" type="ConstraintStrengthType" use="optional"/>
 	</xs:complexType>
 	
 	<xs:complexType name="CoConstraintType">
@@ -173,6 +173,7 @@
 			<xs:element name="Contexts" type="ContextsType"  minOccurs="0" maxOccurs="1"/>
 		</xs:sequence>
 		<xs:attribute name="Cardinality" type="xs:int" use="optional"/>
+		<xs:attribute name="Ref" type="xs:string" use="optional"/>
 	</xs:complexType>
 	
 	<xs:complexType name="ContextsType">
