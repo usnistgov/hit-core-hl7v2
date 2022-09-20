@@ -17,75 +17,109 @@ import gov.nist.hit.core.domain.VocabularyLibrary;
 @Entity
 public class HL7V2TestContext extends TestContext {
 
+	private static final long serialVersionUID = 1L;
 
-  private static final long serialVersionUID = 1L;
+	private boolean dqa;
 
-  private boolean dqa;
+	@OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
+	@JoinColumn(unique = true, nullable = false, insertable = true, updatable = true)
+	@JsonProperty(value = "profile")
+	protected ConformanceProfile conformanceProfile;
 
-  @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
-  @JoinColumn(unique = true, nullable = false, insertable = true, updatable = true)
-  @JsonProperty(value = "profile")
-  protected ConformanceProfile conformanceProfile;
+	@ManyToOne(cascade = { CascadeType.PERSIST, CascadeType.MERGE })
+	protected VocabularyLibrary vocabularyLibrary;
 
-  @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
-  protected VocabularyLibrary vocabularyLibrary;
+	@JsonIgnore
+	@ManyToOne(cascade = { CascadeType.PERSIST, CascadeType.MERGE })
+	@JoinColumn(nullable = true, insertable = true, updatable = true)
+	protected Constraints constraints;
 
-  @JsonIgnore
-  @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
-  @JoinColumn(nullable = true, insertable = true, updatable = true)
-  protected Constraints constraints;
+	@JsonIgnore
+	@OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
+	@JoinColumn(nullable = true, insertable = true, updatable = true)
+	protected Constraints addditionalConstraints;
 
-  @JsonIgnore
-  @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
-  @JoinColumn(nullable = true, insertable = true, updatable = true)
-  protected Constraints addditionalConstraints;
+	@JsonIgnore
+	@ManyToOne(cascade = { CascadeType.PERSIST, CascadeType.MERGE })
+	@JoinColumn(nullable = true, insertable = true, updatable = true)
+	protected CoConstraints coConstraints;
 
+	@JsonIgnore
+	@ManyToOne(cascade = { CascadeType.PERSIST, CascadeType.MERGE })
+	@JoinColumn(nullable = true, insertable = true, updatable = true)
+	protected Slicings slicings;
 
-  public HL7V2TestContext() {
-    this.format = "hl7v2";
-  }
+	@JsonIgnore
+	@ManyToOne(cascade = { CascadeType.PERSIST, CascadeType.MERGE })
+	@JoinColumn(nullable = true, insertable = true, updatable = true)
+	protected ValueSetBindings valueSetBindings;
 
-  public ConformanceProfile getConformanceProfile() {
-    return conformanceProfile;
-  }
+	public HL7V2TestContext() {
+		this.format = "hl7v2";
+	}
 
-  public void setConformanceProfile(ConformanceProfile conformanceProfile) {
-    this.conformanceProfile = conformanceProfile;
-  }
+	public ConformanceProfile getConformanceProfile() {
+		return conformanceProfile;
+	}
 
+	public void setConformanceProfile(ConformanceProfile conformanceProfile) {
+		this.conformanceProfile = conformanceProfile;
+	}
 
-  public Constraints getConstraints() {
-    return constraints;
-  }
+	public Constraints getConstraints() {
+		return constraints;
+	}
 
-  public void setConstraints(Constraints constraints) {
-    this.constraints = constraints;
-  }
+	public void setConstraints(Constraints constraints) {
+		this.constraints = constraints;
+	}
 
-  public VocabularyLibrary getVocabularyLibrary() {
-    return vocabularyLibrary;
-  }
+	public VocabularyLibrary getVocabularyLibrary() {
+		return vocabularyLibrary;
+	}
 
-  public void setVocabularyLibrary(VocabularyLibrary vocabularyLibrary) {
-    this.vocabularyLibrary = vocabularyLibrary;
-  }
+	public void setVocabularyLibrary(VocabularyLibrary vocabularyLibrary) {
+		this.vocabularyLibrary = vocabularyLibrary;
+	}
 
-  public Constraints getAddditionalConstraints() {
-    return addditionalConstraints;
-  }
+	public Constraints getAddditionalConstraints() {
+		return addditionalConstraints;
+	}
 
-  public void setAddditionalConstraints(Constraints addditionalConstraints) {
-    this.addditionalConstraints = addditionalConstraints;
-  }
+	public void setAddditionalConstraints(Constraints addditionalConstraints) {
+		this.addditionalConstraints = addditionalConstraints;
+	}
 
-  public boolean isDqa() {
-    return dqa;
-  }
+	public CoConstraints getCoConstraints() {
+		return coConstraints;
+	}
 
-  public void setDqa(boolean dqa) {
-    this.dqa = dqa;
-  }
+	public void setCoConstraints(CoConstraints coConstraints) {
+		this.coConstraints = coConstraints;
+	}
 
+	public Slicings getSlicings() {
+		return slicings;
+	}
 
+	public void setSlicings(Slicings slicings) {
+		this.slicings = slicings;
+	}
+
+	public ValueSetBindings getValueSetBindings() {
+		return valueSetBindings;
+	}
+
+	public void setValueSetBindings(ValueSetBindings valueSetBindings) {
+		this.valueSetBindings = valueSetBindings;
+	}
+
+	public boolean isDqa() {
+		return dqa;
+	}
+
+	public void setDqa(boolean dqa) {
+		this.dqa = dqa;
+	}
 
 }

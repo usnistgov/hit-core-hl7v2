@@ -14,6 +14,7 @@ package gov.nist.hit.core.hl7v2.service;
 import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -36,12 +37,12 @@ import gov.nist.hit.core.service.MessageValidator;
 import gov.nist.hit.core.service.ValidationLogService;
 import gov.nist.hit.core.service.exception.MessageException;
 import gov.nist.hit.core.service.exception.MessageValidationException;
-import gov.nist.hit.core.service.exception.ValidationReportException;
 import gov.nist.hit.logging.HITStatsLogger;
 import hl7.v2.validation.content.ConformanceContext;
 import hl7.v2.validation.content.DefaultConformanceContext;
 import hl7.v2.validation.vs.ValueSetLibrary;
 import hl7.v2.validation.vs.ValueSetLibraryImpl;
+import scala.collection.JavaConverters;
 
 public abstract class HL7V2MessageValidator implements MessageValidator {
 
@@ -115,11 +116,27 @@ public abstract class HL7V2MessageValidator implements MessageValidator {
 				String organization = "";
 				String operation = "message validation";
 				
+					boolean newversion = true;				
 					
-								
 				if (configuration != null) {
-					report = vp.validate(message, v2TestContext.getConformanceProfile().getXml(), c, vsLib,
-							conformanceProfielId, Context.valueOf(contextType),configuration);
+					
+					if (newversion) {
+						report = vp.validateNew(message,
+								IOUtils.toInputStream(v2TestContext.getConformanceProfile().getXml(), StandardCharsets.UTF_8),
+								IOUtils.toInputStream(v2TestContext.getVocabularyLibrary().getXml(), StandardCharsets.UTF_8),
+								JavaConverters.asScalaIterableConverter(cStreams).asScala().toList(),
+								IOUtils.toInputStream(v2TestContext.getValueSetBindings().getXml(), StandardCharsets.UTF_8),
+								IOUtils.toInputStream(v2TestContext.getCoConstraints().getXml(), StandardCharsets.UTF_8),
+								IOUtils.toInputStream(v2TestContext.getSlicings().getXml(), StandardCharsets.UTF_8),
+								conformanceProfielId,
+								Context.valueOf(contextType),
+								configuration);
+					}else {
+						report = vp.validate(message, v2TestContext.getConformanceProfile().getXml(), c, vsLib,
+								conformanceProfielId, Context.valueOf(contextType),configuration);
+					}
+					
+					
 					Map<String, String> env = System.getenv();			       
 			        for (Map.Entry<String, String> entry : env.entrySet()) {
 			            System.out.println(entry.getKey() + " : " + entry.getValue());
@@ -128,10 +145,25 @@ public abstract class HL7V2MessageValidator implements MessageValidator {
 					HITStatsLogger.log(username, organization, operation, testContext.getDomain());
 					
 				}else {
-					report = vp.validate(message, v2TestContext.getConformanceProfile().getXml(), c, vsLib,
+					if (newversion) {
+						report = vp.validateNew(message,
+								IOUtils.toInputStream(v2TestContext.getConformanceProfile().getXml(), StandardCharsets.UTF_8),
+								IOUtils.toInputStream(v2TestContext.getVocabularyLibrary().getXml(), StandardCharsets.UTF_8),
+								JavaConverters.asScalaIterableConverter(cStreams).asScala().toList(),
+								IOUtils.toInputStream(v2TestContext.getValueSetBindings().getXml(), StandardCharsets.UTF_8),
+								IOUtils.toInputStream(v2TestContext.getCoConstraints().getXml(), StandardCharsets.UTF_8),
+								IOUtils.toInputStream(v2TestContext.getSlicings().getXml(), StandardCharsets.UTF_8),
+								conformanceProfielId,
+								Context.valueOf(contextType),
+								null);
+					}else {
+						report = vp.validate(message, v2TestContext.getConformanceProfile().getXml(), c, vsLib,
 							conformanceProfielId, Context.valueOf(contextType));
+					}
 					HITStatsLogger.log(username, organization, operation, testContext.getDomain());
 				}
+				
+				
 				if (report != null) {
 					Map<String, String> nav = command.getNav();
 					if (nav != null && !nav.isEmpty()) {
