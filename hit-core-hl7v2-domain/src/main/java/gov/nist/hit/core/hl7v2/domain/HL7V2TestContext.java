@@ -9,9 +9,12 @@ import javax.persistence.OneToOne;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import gov.nist.hit.core.domain.CoConstraints;
 import gov.nist.hit.core.domain.ConformanceProfile;
 import gov.nist.hit.core.domain.Constraints;
+import gov.nist.hit.core.domain.Slicings;
 import gov.nist.hit.core.domain.TestContext;
+import gov.nist.hit.core.domain.ValueSetBindings;
 import gov.nist.hit.core.domain.VocabularyLibrary;
 
 @Entity

@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.util.List;
 
 import org.apache.commons.io.IOUtils;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import gov.nist.hit.core.domain.ProfileElement;
@@ -34,7 +35,7 @@ public class ProfileParserImplTest {
   //
   // }
 
-
+  
   @Test
   public void testParseLRIProfile() throws ProfileParserException, IOException {
     String profile = IOUtils
@@ -54,6 +55,24 @@ public class ProfileParserImplTest {
 
   }
 
+  @Ignore
+  @Test
+  public void testParseNewValidationProfile() throws ProfileParserException, IOException {
+    String profile = IOUtils
+        .toString(ProfileParserImplTest.class.getResourceAsStream("/profiles/new_Profile.xml"));
+    String constraints = IOUtils.toString(
+        ProfileParserImplTest.class.getResourceAsStream("/constraints/new_Constraints.xml"));
+    ProfileModel model = parser.parse(profile, "aa72383a-7b48-46e5-a74a-82e019591fe7", constraints);
+    ProfileElement message = model.getMessage();
+    ProfileElement group = message.getChildren().get(2);
+    assertEquals("PATIENT_RESULT", group.getName());
+    group = group.getChildren().get(1);
+    assertEquals("ORDER_OBSERVATION", group.getName());
+    List<gov.nist.hit.core.domain.constraints.Predicate> predicates = group.getPredicates();
+    assertFalse(predicates.size() == 0);
+    group = group.getChildren().get(5);
+    assertEquals("OBSERVATION", group.getName());
 
+  }
 
 }

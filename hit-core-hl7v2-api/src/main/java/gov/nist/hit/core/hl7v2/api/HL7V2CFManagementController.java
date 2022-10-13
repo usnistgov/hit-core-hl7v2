@@ -39,7 +39,6 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
@@ -61,7 +60,6 @@ import gov.nist.hit.core.domain.Message;
 import gov.nist.hit.core.domain.ResourceUploadResult;
 import gov.nist.hit.core.domain.TestCaseWrapper;
 import gov.nist.hit.core.domain.TestContext;
-import gov.nist.hit.core.domain.TestPlan;
 import gov.nist.hit.core.domain.TestScope;
 import gov.nist.hit.core.domain.UploadStatus;
 import gov.nist.hit.core.domain.UploadedProfileModel;
@@ -69,9 +67,12 @@ import gov.nist.hit.core.hl7v2.service.FileValidationHandler;
 import gov.nist.hit.core.hl7v2.service.PackagingHandler;
 import gov.nist.hit.core.hl7v2.service.impl.FileValidationHandlerImpl.InvalidFileTypeException;
 import gov.nist.hit.core.hl7v2.service.impl.HL7V2ProfileParserImpl;
+import gov.nist.hit.core.repo.CoConstraintsRepository;
 import gov.nist.hit.core.repo.ConstraintsRepository;
 import gov.nist.hit.core.repo.IntegrationProfileRepository;
+import gov.nist.hit.core.repo.SlicingsRepository;
 import gov.nist.hit.core.repo.UserTestCaseGroupRepository;
+import gov.nist.hit.core.repo.ValueSetBindingsRepository;
 import gov.nist.hit.core.repo.VocabularyLibraryRepository;
 import gov.nist.hit.core.service.AppInfoService;
 import gov.nist.hit.core.service.BundleHandler;
@@ -119,6 +120,15 @@ public class HL7V2CFManagementController {
 
   @Autowired
   private VocabularyLibraryRepository vsRepository;
+  
+  @Autowired
+  private SlicingsRepository slicingsRepository;
+  
+  @Autowired
+  private ValueSetBindingsRepository vsbRepository;
+  
+  @Autowired
+  private CoConstraintsRepository cocsRepository;
 
   @Autowired
   private UserIdService userIdService;
@@ -401,6 +411,180 @@ public class HL7V2CFManagementController {
 		}
 	}
 
+	
+	 /**
+	   * Upload a single XML coConstraints file and may returns errors
+	   * 
+	   * @param request Client request
+	   * @param part coConstraints XML file
+	   * @param token Token used for saving file
+	   * @param p Principal
+	   * @return May return a list of errors
+	   * @throws Exception
+	   */
+		@PreAuthorize("hasRole('tester')")
+		@RequestMapping(value = "/uploadCoConstraints", method = RequestMethod.POST, consumes = { "multipart/form-data" })
+		@ResponseBody
+		public Map<String, Object> uploadCoContraints(ServletRequest request, @RequestPart("file") MultipartFile part,
+				@RequestParam("token") String token, Principal p) throws Exception {
+			checkManagementSupport();
+
+			Map<String, Object> resultMap = new HashMap<String, Object>();
+			try {
+				String filename = part.getOriginalFilename();
+				String extension = filename.substring(filename.lastIndexOf(".") + 1);
+				if (!extension.equalsIgnoreCase("xml")) {
+					throw new MessageUploadException(
+				            "Unsupported content type. Supported content types are: '.xml' ");
+				}
+
+				String userName = userIdService.getCurrentUserName(p);
+				if (userName == null)
+					throw new NoUserFoundException("User could not be found");
+				
+				ByteArrayOutputStream baos = new ByteArrayOutputStream();
+				org.apache.commons.io.IOUtils.copy(part.getInputStream(), baos);
+				byte[] bytes = baos.toByteArray();
+				String content = IOUtils.toString(new ByteArrayInputStream(bytes));
+				File coConstraintFile = new File(CF_RESOURCE_BUNDLE_DIR + "/" + userName + "/" + token + "/CoConstraints.xml");
+				FileUtils.writeStringToFile(coConstraintFile, content);
+
+
+				resultMap.put("success", true);
+
+				return resultMap;
+			} catch (NoUserFoundException e) {
+				resultMap.put("success", false);
+				resultMap.put("message", "An error occured. The tool could not upload the coConstraints file sent");
+				resultMap.put("debugError", ExceptionUtils.getMessage(e));
+				return resultMap;
+			} catch (MessageUploadException e) {
+				resultMap.put("success", false);
+				resultMap.put("message", "An error occured. The tool could not upload the coConstraints file sent");
+				resultMap.put("debugError", ExceptionUtils.getMessage(e));
+				return resultMap;
+			} catch (Exception e) {
+				resultMap.put("success", false);
+				resultMap.put("message", "An error occured. The tool could not upload the coConstraints file sent");
+				resultMap.put("debugError", ExceptionUtils.getStackTrace(e));
+				return resultMap;
+			}
+		}
+		
+		/**
+		   * Upload a single XML Value Set Bindings file and may returns errors
+		   * 
+		   * @param request Client request
+		   * @param part Value Set Bindings XML file
+		   * @param token Token used for saving file
+		   * @param p Principal
+		   * @return May return a list of errors
+		   * @throws Exception
+		   */
+			@PreAuthorize("hasRole('tester')")
+			@RequestMapping(value = "/uploadValueSetBindings", method = RequestMethod.POST, consumes = { "multipart/form-data" })
+			@ResponseBody
+			public Map<String, Object> uploadValueSetBindings(ServletRequest request, @RequestPart("file") MultipartFile part,
+					@RequestParam("token") String token, Principal p) throws Exception {
+				checkManagementSupport();
+
+				Map<String, Object> resultMap = new HashMap<String, Object>();
+				try {
+					String filename = part.getOriginalFilename();
+					String extension = filename.substring(filename.lastIndexOf(".") + 1);
+					if (!extension.equalsIgnoreCase("xml")) {
+						throw new MessageUploadException(
+					            "Unsupported content type. Supported content types are: '.xml' ");
+					}
+
+					String userName = userIdService.getCurrentUserName(p);
+					if (userName == null)
+						throw new NoUserFoundException("User could not be found");
+					
+					ByteArrayOutputStream baos = new ByteArrayOutputStream();
+					org.apache.commons.io.IOUtils.copy(part.getInputStream(), baos);
+					byte[] bytes = baos.toByteArray();
+					String content = IOUtils.toString(new ByteArrayInputStream(bytes));
+					File valueSetBindingsFile = new File(CF_RESOURCE_BUNDLE_DIR + "/" + userName + "/" + token + "/ValueSetBindings.xml");
+					FileUtils.writeStringToFile(valueSetBindingsFile, content);
+					resultMap.put("success", true);
+
+					return resultMap;
+				} catch (NoUserFoundException e) {
+					resultMap.put("success", false);
+					resultMap.put("message", "An error occured. The tool could not upload the Value Set Bindings file sent");
+					resultMap.put("debugError", ExceptionUtils.getMessage(e));
+					return resultMap;
+				} catch (MessageUploadException e) {
+					resultMap.put("success", false);
+					resultMap.put("message", "An error occured. The tool could not upload the Value Set Bindings file sent");
+					resultMap.put("debugError", ExceptionUtils.getMessage(e));
+					return resultMap;
+				} catch (Exception e) {
+					resultMap.put("success", false);
+					resultMap.put("message", "An error occured. The tool could not upload the Value Set Bindings file sent");
+					resultMap.put("debugError", ExceptionUtils.getStackTrace(e));
+					return resultMap;
+				}
+			}
+			
+			/**
+			   * Upload a single XML Slicings file and may returns errors
+			   * 
+			   * @param request Client request
+			   * @param part Slicings XML file
+			   * @param token Token used for saving file
+			   * @param p Principal
+			   * @return May return a list of errors
+			   * @throws Exception
+			   */
+				@PreAuthorize("hasRole('tester')")
+				@RequestMapping(value = "/uploadSlicings", method = RequestMethod.POST, consumes = { "multipart/form-data" })
+				@ResponseBody
+				public Map<String, Object> uploadSlicings(ServletRequest request, @RequestPart("file") MultipartFile part,
+						@RequestParam("token") String token, Principal p) throws Exception {
+					checkManagementSupport();
+
+					Map<String, Object> resultMap = new HashMap<String, Object>();
+					try {
+						String filename = part.getOriginalFilename();
+						String extension = filename.substring(filename.lastIndexOf(".") + 1);
+						if (!extension.equalsIgnoreCase("xml")) {
+							throw new MessageUploadException(
+						            "Unsupported content type. Supported content types are: '.xml' ");
+						}
+
+						String userName = userIdService.getCurrentUserName(p);
+						if (userName == null)
+							throw new NoUserFoundException("User could not be found");
+						
+						ByteArrayOutputStream baos = new ByteArrayOutputStream();
+						org.apache.commons.io.IOUtils.copy(part.getInputStream(), baos);
+						byte[] bytes = baos.toByteArray();
+						String content = IOUtils.toString(new ByteArrayInputStream(bytes));
+						File slicingsFile = new File(CF_RESOURCE_BUNDLE_DIR + "/" + userName + "/" + token + "/Slicings.xml");
+						FileUtils.writeStringToFile(slicingsFile, content);
+						resultMap.put("success", true);
+
+						return resultMap;
+					} catch (NoUserFoundException e) {
+						resultMap.put("success", false);
+						resultMap.put("message", "An error occured. The tool could not upload the Slicings file sent");
+						resultMap.put("debugError", ExceptionUtils.getMessage(e));
+						return resultMap;
+					} catch (MessageUploadException e) {
+						resultMap.put("success", false);
+						resultMap.put("message", "An error occured. The tool could not upload the Slicings file sent");
+						resultMap.put("debugError", ExceptionUtils.getMessage(e));
+						return resultMap;
+					} catch (Exception e) {
+						resultMap.put("success", false);
+						resultMap.put("message", "An error occured. The tool could not upload the Slicings file sent");
+						resultMap.put("debugError", ExceptionUtils.getStackTrace(e));
+						return resultMap;
+					}
+				}
+		
   /**
    * Uploads zip file and stores it in a temporary directory
    * 
@@ -599,6 +783,17 @@ public class HL7V2CFManagementController {
         ipRepository.save(si.ip);
         csRepository.save(si.ct);
         vsRepository.save(si.vs);
+        //optionals
+        if(si.slicings != null) {
+        	slicingsRepository.save(si.slicings);
+        }
+        if(si.coct != null) {
+        	cocsRepository.save(si.coct);
+        }
+        
+        if(si.vsBindings != null) {
+        	vsbRepository.save(si.vsBindings);
+        }            
         si.tcg.setAuthorUsername(username);
         testPlanService.save((CFTestPlan) si.tcg);
         testPlanService.removeCacheElement(testPlan.getId());
@@ -678,6 +873,11 @@ public class HL7V2CFManagementController {
 	      testCaseJson.put("profile", "Profile.xml");
 	      testCaseJson.put("constraints", "Constraints.xml");
 	      testCaseJson.put("vs", "ValueSets.xml");
+	      //optional 3 new validation files
+	      testCaseJson.put("coConstraints", "CoConstraints.xml");
+	      testCaseJson.put("slicings", "Slicings.xml");
+	      testCaseJson.put("valueSetBingings", "ValueSetBindings.xml");
+	      
 	      testCaseJson.put("scope", scope);
 	      testCaseJson.put("domain", domain);
 	      // testCaseJson.put("category", wrapper.getCategory());
@@ -764,6 +964,18 @@ public class HL7V2CFManagementController {
         ipRepository.save(si.ip);
         csRepository.save(si.ct);
         vsRepository.save(si.vs);
+        //optionals
+        if(si.slicings != null) {
+        	slicingsRepository.save(si.slicings);
+        }
+        if(si.coct != null) {
+        	cocsRepository.save(si.coct);
+        }
+        
+        if(si.vsBindings != null) {
+        	vsbRepository.save(si.vsBindings);
+        }
+        
         si.tcg.setAuthorUsername(username);
         testStepGroupService.save((CFTestStepGroup) si.tcg);       
         

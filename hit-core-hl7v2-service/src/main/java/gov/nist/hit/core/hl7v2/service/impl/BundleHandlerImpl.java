@@ -25,13 +25,16 @@ import gov.nist.hit.core.domain.AbstractTestCase;
 import gov.nist.hit.core.domain.CFTestPlan;
 import gov.nist.hit.core.domain.CFTestStep;
 import gov.nist.hit.core.domain.CFTestStepGroup;
+import gov.nist.hit.core.domain.CoConstraints;
 import gov.nist.hit.core.domain.ConformanceProfile;
 import gov.nist.hit.core.domain.Constraints;
 import gov.nist.hit.core.domain.GVTSaveInstance;
 import gov.nist.hit.core.domain.IntegrationProfile;
 import gov.nist.hit.core.domain.Message;
+import gov.nist.hit.core.domain.Slicings;
 import gov.nist.hit.core.domain.TestScope;
 import gov.nist.hit.core.domain.TestingStage;
+import gov.nist.hit.core.domain.ValueSetBindings;
 import gov.nist.hit.core.domain.VocabularyLibrary;
 import gov.nist.hit.core.hl7v2.domain.HL7V2TestContext;
 import gov.nist.hit.core.service.BundleHandler;
@@ -222,8 +225,44 @@ public class BundleHandlerImpl implements BundleHandler {
 		}
 		VocabularyLibrary v = resourceLoader.vocabLibrary(FileUtils.readFileToString(vsFile), tp.getDomain(),
 				tp.getScope(), tp.getAuthorUsername(), tp.isPreloaded());
-
 		save.vs = v;
+		
+		// VSB
+		String valueSetBingingsName = testCasesObj.findValue("valueSetBingings").asText();
+		File valueSetBingingsFile = new File(dir + "/" + valueSetBingingsName);
+		ValueSetBindings vsb = null;
+		if (valueSetBingingsFile.exists()) {
+			vsb = resourceLoader.valuesetbindings(FileUtils.readFileToString(valueSetBingingsFile), tp.getDomain(),
+					tp.getScope(), tp.getAuthorUsername(), tp.isPreloaded());
+			save.vsBindings = vsb;
+			//			throw new IllegalArgumentException("valueSetBingings " + valueSetBingingsName + " not found");
+		}
+		
+		
+		// CoConstraints
+		String coConstraintName = testCasesObj.findValue("coConstraints").asText();
+		File coConstraintsFile = new File(dir + "/" + coConstraintName);
+		CoConstraints cc = null;
+		if (coConstraintsFile.exists()) {
+			cc = resourceLoader.coConstraints(FileUtils.readFileToString(coConstraintsFile), tp.getDomain(),
+					tp.getScope(), tp.getAuthorUsername(), tp.isPreloaded());
+			save.coct = cc;
+//			throw new IllegalArgumentException("CoConstraints " + coConstraintName + " not found");
+		}
+		
+		
+		// Slicings
+		String slicingsName = testCasesObj.findValue("slicings").asText();
+		File slicingsFile = new File(dir + "/" + slicingsName);
+		Slicings slice = null;
+		if (slicingsFile.exists()) {
+			slice = resourceLoader.slicings(FileUtils.readFileToString(slicingsFile), tp.getDomain(),
+					tp.getScope(), tp.getAuthorUsername(), tp.isPreloaded());
+			save.slicings = slice;
+//			throw new IllegalArgumentException("CoConstraints " + slicingsName + " not found");
+		}
+		
+		
 
 		Iterator<JsonNode> testCasesIter = testCasesObj.findValue("testCases").elements();
 		int size = testSteps.size();
@@ -254,6 +293,15 @@ public class BundleHandlerImpl implements BundleHandler {
 			HL7V2TestContext testContext = new HL7V2TestContext();
 			testContext.setVocabularyLibrary(v);
 			testContext.setConstraints(c);
+			if(cc != null) {
+				testContext.setCoConstraints(cc);
+			}
+			if(slice != null) {
+				testContext.setSlicings(slice);
+			}
+			if(vsb != null) {
+				testContext.setValueSetBindings(vsb);
+			}
 			testContext.setConformanceProfile(conformanceProfile);
 			testContext.setDqa(false);
 			testContext.setStage(TestingStage.CF);
@@ -334,6 +382,23 @@ public class BundleHandlerImpl implements BundleHandler {
 	public String getConstraintContentFromZipDirectory(String dir) throws IOException {
 		return FileUtils.readFileToString(findFileDirectory(dir, "Constraints.xml"));
 	}
+	
+	@Override
+	public String getCoConstraintContentFromZipDirectory(String dir) throws IOException {
+		return FileUtils.readFileToString(findFileDirectory(dir, "CoConstraints.xml"));
+	}
+
+	@Override
+	public String getSlicingsContentFromZipDirectory(String dir) throws IOException {
+		return FileUtils.readFileToString(findFileDirectory(dir, "Slicings.xml"));
+	}
+
+	@Override
+	public String getValueSetBindingsContentFromZipDirectory(String dir) throws IOException {
+		return FileUtils.readFileToString(findFileDirectory(dir, "ValueSetBindings.xml"));
+		
+	}
+	
 
 	// finds file in dir and sub-dir
 	private File findFileDirectory(String dir, String fileName) {
@@ -359,6 +424,7 @@ public class BundleHandlerImpl implements BundleHandler {
 		}
 		return resfiles;
 	}
-	
+
+
 
 }

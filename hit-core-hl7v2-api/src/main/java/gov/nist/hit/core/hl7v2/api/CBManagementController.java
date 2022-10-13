@@ -811,6 +811,18 @@ public class CBManagementController {
 				resourceLoader.addOrReplaceValueSet(directory + "/Global/Tables/", domain, TestScope.USER, u.getName(),
 						false);
 			}
+			if (Files.exists(Paths.get(directory + "/Global/CoConstraints/"))) {
+				resourceLoader.addOrReplaceCoConstraints(directory + "/Global/CoConstraints/", domain, TestScope.USER, u.getName(),
+						false);
+			}
+			if (Files.exists(Paths.get(directory + "/Global/Bindings/"))) {
+				resourceLoader.addOrReplaceValueSetBindings(directory + "/Global/Bindings/", domain, TestScope.USER, u.getName(),
+						false);
+			}
+			if (Files.exists(Paths.get(directory + "/Global/Slicings/"))) {
+				resourceLoader.addOrReplaceSlicings(directory + "/Global/Slicings/", domain, TestScope.USER, u.getName(),
+						false);
+			}
 
 			List<TestPlan> plans = resourceLoader.createTP(directory + "/Contextbased/", domain, TestScope.USER,
 					u.getName(), false);

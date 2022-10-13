@@ -18,7 +18,7 @@
 		<additionalparam>-Xdoclint:none</additionalparam>
 		<java.version>1.8</java.version>
 		<resourcesValidation.version>1.0.1</resourcesValidation.version>
-		<hl7v2Validation.version>1.6.0-SNAPSHOT</hl7v2Validation.version>
+		<hl7v2Validation.version>1.6.2-SNAPSHOT</hl7v2Validation.version>
 		<unifiedreport.version>1.0.10-SNAPSHOT</unifiedreport.version>
 	</properties>
 

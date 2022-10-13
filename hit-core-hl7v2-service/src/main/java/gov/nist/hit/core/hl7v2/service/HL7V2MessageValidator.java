@@ -83,24 +83,43 @@ public abstract class HL7V2MessageValidator implements MessageValidator {
 		try {
 			if (testContext instanceof HL7V2TestContext) {
 				HL7V2TestContext v2TestContext = (HL7V2TestContext) testContext;
+				EnhancedReport report;
 				String contextType = command.getContextType();
 				String message = getMessageContent(command);
 				String conformanceProfielId = v2TestContext.getConformanceProfile().getSourceId();
-				String valueSets = v2TestContext.getVocabularyLibrary().getXml();
+				
+				
+				
+				Account account = null;
+				String username = accountService.findOne(command.getUserId()) != null ? accountService.findOne(command.getUserId()).getUsername() : "guest";
+				String organization = "";
+				String operation = "message validation";
+				
+				
 				String c1 = v2TestContext.getConstraints() != null ? v2TestContext.getConstraints().getXml() : null;
 				String c2 = v2TestContext.getAddditionalConstraints() != null
 						? v2TestContext.getAddditionalConstraints().getXml() : null;
-				InputStream c1Stream = c1 != null ? IOUtils.toInputStream(c1) : null;
-				InputStream c2Stream = c2 != null ? IOUtils.toInputStream(c2) : null;
-				List<InputStream> cStreams = new ArrayList<InputStream>();
+				InputStream c1Stream = c1 != null ? IOUtils.toInputStream(c1, StandardCharsets.UTF_8) : null;
+				InputStream c1Stream_2 = c1 != null ? IOUtils.toInputStream(c1, StandardCharsets.UTF_8) : null;
+				InputStream c2Stream = c2 != null ? IOUtils.toInputStream(c2, StandardCharsets.UTF_8) : null;
+				InputStream c2Stream_2 = c2 != null ? IOUtils.toInputStream(c2, StandardCharsets.UTF_8) : null;
+
+				List<InputStream> cStreams = new ArrayList<InputStream>();				
 				if (c1Stream != null)
 					cStreams.add(c1Stream);
 				if (c2Stream != null)
 					cStreams.add(c2Stream);
-				ConformanceContext c = getConformanceContext(cStreams);
-				ValueSetLibrary vsLib = valueSets != null ? getValueSetLibrary(IOUtils.toInputStream(valueSets)) : null;
+				List<InputStream> cStreams_2 = new ArrayList<InputStream>();				
+				if (c1Stream_2 != null)
+					cStreams_2.add(c1Stream_2);
+				if (c2Stream_2 != null)
+					cStreams_2.add(c2Stream_2);
+				
+				ConformanceContext c = getConformanceContext(cStreams);				
 				ValidationProxy vp = new ValidationProxy(getValidationServiceName(), getProviderName());
-				EnhancedReport report;
+				
+				
+				
 				Reader configuration = null;
 				Domain domain = domainService.findOneByKey(v2TestContext.getDomain());
 				if (domain != null) {
@@ -111,52 +130,62 @@ public abstract class HL7V2MessageValidator implements MessageValidator {
 				}
 				
 				
-				Account account = null;
-				String username = accountService.findOne(command.getUserId()) != null ? accountService.findOne(command.getUserId()).getUsername() : "guest";
-				String organization = "";
-				String operation = "message validation";
+			
 				
-					boolean newversion = true;				
+				boolean newversion = true;		
+				
+				InputStream valueSetLibraryIS = null ,valueSetBindingsIS = null,coConstraintsIS= null,slicingsIS = null;
+				if (v2TestContext.getVocabularyLibrary() != null) {
+					valueSetLibraryIS = IOUtils.toInputStream(v2TestContext.getVocabularyLibrary().getXml(), StandardCharsets.UTF_8);
+				}
+				if (v2TestContext.getValueSetBindings() != null) {
+					valueSetBindingsIS = IOUtils.toInputStream(v2TestContext.getValueSetBindings().getXml(), StandardCharsets.UTF_8);
+				}
+				if (v2TestContext.getCoConstraints() != null) {
+					coConstraintsIS = IOUtils.toInputStream(v2TestContext.getCoConstraints().getXml(), StandardCharsets.UTF_8);
+				}
+				if (v2TestContext.getSlicings() != null) {
+					slicingsIS = IOUtils.toInputStream(v2TestContext.getSlicings().getXml(), StandardCharsets.UTF_8);
+				}
+				
+				
 					
-				if (configuration != null) {
-					
+				if (configuration != null) {					
 					if (newversion) {
 						report = vp.validateNew(message,
-								IOUtils.toInputStream(v2TestContext.getConformanceProfile().getXml(), StandardCharsets.UTF_8),
-								IOUtils.toInputStream(v2TestContext.getVocabularyLibrary().getXml(), StandardCharsets.UTF_8),
-								JavaConverters.asScalaIterableConverter(cStreams).asScala().toList(),
-								IOUtils.toInputStream(v2TestContext.getValueSetBindings().getXml(), StandardCharsets.UTF_8),
-								IOUtils.toInputStream(v2TestContext.getCoConstraints().getXml(), StandardCharsets.UTF_8),
-								IOUtils.toInputStream(v2TestContext.getSlicings().getXml(), StandardCharsets.UTF_8),
+								v2TestContext.getConformanceProfile().getXml(),
+								valueSetLibraryIS,
+								cStreams_2,
+								valueSetBindingsIS,
+								coConstraintsIS,
+								slicingsIS,
 								conformanceProfielId,
 								Context.valueOf(contextType),
 								configuration);
 					}else {
+						//to be removed 
+						String valueSets = v2TestContext.getVocabularyLibrary().getXml();
+						ValueSetLibrary vsLib = valueSets != null ? getValueSetLibrary(IOUtils.toInputStream(valueSets, StandardCharsets.UTF_8)) : null;
 						report = vp.validate(message, v2TestContext.getConformanceProfile().getXml(), c, vsLib,
 								conformanceProfielId, Context.valueOf(contextType),configuration);
-					}
-					
-					
-					Map<String, String> env = System.getenv();			       
-			        for (Map.Entry<String, String> entry : env.entrySet()) {
-			            System.out.println(entry.getKey() + " : " + entry.getValue());
-			        }
-					
-					HITStatsLogger.log(username, organization, operation, testContext.getDomain());
-					
+					}													
+					HITStatsLogger.log(username, organization, operation, testContext.getDomain());					
 				}else {
 					if (newversion) {
 						report = vp.validateNew(message,
-								IOUtils.toInputStream(v2TestContext.getConformanceProfile().getXml(), StandardCharsets.UTF_8),
-								IOUtils.toInputStream(v2TestContext.getVocabularyLibrary().getXml(), StandardCharsets.UTF_8),
-								JavaConverters.asScalaIterableConverter(cStreams).asScala().toList(),
-								IOUtils.toInputStream(v2TestContext.getValueSetBindings().getXml(), StandardCharsets.UTF_8),
-								IOUtils.toInputStream(v2TestContext.getCoConstraints().getXml(), StandardCharsets.UTF_8),
-								IOUtils.toInputStream(v2TestContext.getSlicings().getXml(), StandardCharsets.UTF_8),
+								v2TestContext.getConformanceProfile().getXml(),
+								valueSetLibraryIS,
+								cStreams_2,
+								valueSetBindingsIS,
+								coConstraintsIS,
+								slicingsIS,
 								conformanceProfielId,
 								Context.valueOf(contextType),
 								null);
 					}else {
+						//to be removed
+						String valueSets = v2TestContext.getVocabularyLibrary().getXml();
+						ValueSetLibrary vsLib = valueSets != null ? getValueSetLibrary(IOUtils.toInputStream(valueSets, StandardCharsets.UTF_8)) : null;
 						report = vp.validate(message, v2TestContext.getConformanceProfile().getXml(), c, vsLib,
 							conformanceProfielId, Context.valueOf(contextType));
 					}

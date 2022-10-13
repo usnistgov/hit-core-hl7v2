@@ -24,6 +24,7 @@ import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 
+import gov.nist.hit.core.domain.CoConstraints;
 import gov.nist.hit.core.domain.ConformanceProfile;
 import gov.nist.hit.core.domain.Constraints;
 import gov.nist.hit.core.domain.IntegrationProfile;
@@ -32,11 +33,13 @@ import gov.nist.hit.core.domain.ResourceType;
 import gov.nist.hit.core.domain.ResourceUploadAction;
 import gov.nist.hit.core.domain.ResourceUploadResult;
 import gov.nist.hit.core.domain.ResourceUploadStatus;
+import gov.nist.hit.core.domain.Slicings;
 import gov.nist.hit.core.domain.TestCaseDocument;
 import gov.nist.hit.core.domain.TestContext;
 import gov.nist.hit.core.domain.TestScope;
 import gov.nist.hit.core.domain.TestingStage;
 import gov.nist.hit.core.domain.UploadedProfileModel;
+import gov.nist.hit.core.domain.ValueSetBindings;
 import gov.nist.hit.core.domain.VocabularyLibrary;
 import gov.nist.hit.core.hl7v2.domain.HL7V2TestContext;
 import gov.nist.hit.core.hl7v2.domain.HLV2TestCaseDocument;
@@ -100,6 +103,21 @@ public class HL7V2ResourceLoaderImpl extends HL7V2ResourceLoader {
 //		transactionRepository.deleteAll();
 //		
 //	}
+	
+	@Override
+	protected ValueSetBindings getValueSetBindingsBySourceId(String sourceId) throws IOException {
+		return this.valueSetBindingsRepository.findOneBySourceId(sourceId);
+	}
+	
+	@Override
+	protected Slicings getSlicingsBySourceId(String sourceId) throws IOException {
+		return this.slicingsRepository.findOneBySourceId(sourceId);
+	}
+	
+	@Override
+	protected CoConstraints getCoConstraintsBySourceId(String sourceId) throws IOException {
+		return this.coConstraintsRepository.findOneBySourceId(sourceId);
+	}
 	
 	@Override
 	protected VocabularyLibrary getVocabularyLibrary(String id) throws IOException {
@@ -275,6 +293,167 @@ public class HL7V2ResourceLoaderImpl extends HL7V2ResourceLoader {
 		return results;
 
 	}
+	
+	@Override
+	public List<ResourceUploadStatus> addOrReplaceValueSetBindings(String rootPath, String domain, TestScope scope,
+			String authorUsername, boolean preloaded) {
+
+		List<Resource> resources;
+		try {
+			resources = this.getApiResources("*.xml", rootPath);
+			if (resources == null || resources.isEmpty()) {
+				ResourceUploadStatus result = new ResourceUploadStatus();
+				result.setType(ResourceType.VALUESETBINDINGS);
+				result.setStatus(ResourceUploadResult.FAILURE);
+				result.setMessage("No resource found");
+				return Arrays.asList(result);
+			}
+		} catch (IOException e1) {
+			ResourceUploadStatus result = new ResourceUploadStatus();
+			result.setType(ResourceType.VALUESETBINDINGS);
+			result.setStatus(ResourceUploadResult.FAILURE);
+			result.setMessage("Error while parsing resources");
+			return Arrays.asList(result);
+		}
+
+		List<ResourceUploadStatus> results = new ArrayList<ResourceUploadStatus>();
+
+		for (Resource resource : resources) {
+			ResourceUploadStatus result = new ResourceUploadStatus();
+			result.setType(ResourceType.VALUESETBINDINGS);
+			String content = FileUtil.getContent(resource);
+			try {
+				ValueSetBindings valueSetBindings = valuesetbindings(content, domain, scope, authorUsername, preloaded);
+				result.setId(valueSetBindings.getSourceId());
+				valueSetBindings.setDomain(domain);
+				ValueSetBindings exist = this.getValueSetBindingsBySourceId(valueSetBindings.getSourceId());
+				if (exist != null) {
+					result.setAction(ResourceUploadAction.UPDATE);
+					valueSetBindings.setId(exist.getId());
+					valueSetBindings.setSourceId(exist.getSourceId()); // shouldn't be necessary, right?
+				} else {
+					result.setAction(ResourceUploadAction.ADD);
+				}
+
+				this.valueSetBindingsRepository.save(valueSetBindings);
+				result.setStatus(ResourceUploadResult.SUCCESS);
+
+			} catch (Exception e) {
+				result.setStatus(ResourceUploadResult.FAILURE);
+				result.setMessage(e.getMessage());
+			}
+			results.add(result);
+		}
+		return results;
+	}
+	
+	
+	@Override
+	public List<ResourceUploadStatus> addOrReplaceCoConstraints(String rootPath, String domain, TestScope scope,
+			String authorUsername, boolean preloaded) {
+
+		List<Resource> resources;
+		try {
+			resources = this.getApiResources("*.xml", rootPath);
+			if (resources == null || resources.isEmpty()) {
+				ResourceUploadStatus result = new ResourceUploadStatus();
+				result.setType(ResourceType.VALUESETBINDINGS);
+				result.setStatus(ResourceUploadResult.FAILURE);
+				result.setMessage("No resource found");
+				return Arrays.asList(result);
+			}
+		} catch (IOException e1) {
+			ResourceUploadStatus result = new ResourceUploadStatus();
+			result.setType(ResourceType.VALUESETBINDINGS);
+			result.setStatus(ResourceUploadResult.FAILURE);
+			result.setMessage("Error while parsing resources");
+			return Arrays.asList(result);
+		}
+
+		List<ResourceUploadStatus> results = new ArrayList<ResourceUploadStatus>();
+
+		for (Resource resource : resources) {
+			ResourceUploadStatus result = new ResourceUploadStatus();
+			result.setType(ResourceType.VALUESETBINDINGS);
+			String content = FileUtil.getContent(resource);
+			try {
+				CoConstraints coConstraints = coConstraints(content, domain, scope, authorUsername, preloaded);
+				result.setId(coConstraints.getSourceId());
+				coConstraints.setDomain(domain);
+				CoConstraints exist = this.getCoConstraintsBySourceId(coConstraints.getSourceId());
+				if (exist != null) {
+					result.setAction(ResourceUploadAction.UPDATE);
+					coConstraints.setId(exist.getId());
+					coConstraints.setSourceId(exist.getSourceId()); // shouldn't be necessary, right?
+				} else {
+					result.setAction(ResourceUploadAction.ADD);
+				}
+
+				this.coConstraintsRepository.save(coConstraints);
+				result.setStatus(ResourceUploadResult.SUCCESS);
+
+			} catch (Exception e) {
+				result.setStatus(ResourceUploadResult.FAILURE);
+				result.setMessage(e.getMessage());
+			}
+			results.add(result);
+		}
+		return results;
+	}
+	
+	@Override
+	public List<ResourceUploadStatus> addOrReplaceSlicings(String rootPath, String domain, TestScope scope,
+			String authorUsername, boolean preloaded) {
+
+		List<Resource> resources;
+		try {
+			resources = this.getApiResources("*.xml", rootPath);
+			if (resources == null || resources.isEmpty()) {
+				ResourceUploadStatus result = new ResourceUploadStatus();
+				result.setType(ResourceType.VALUESETBINDINGS);
+				result.setStatus(ResourceUploadResult.FAILURE);
+				result.setMessage("No resource found");
+				return Arrays.asList(result);
+			}
+		} catch (IOException e1) {
+			ResourceUploadStatus result = new ResourceUploadStatus();
+			result.setType(ResourceType.VALUESETBINDINGS);
+			result.setStatus(ResourceUploadResult.FAILURE);
+			result.setMessage("Error while parsing resources");
+			return Arrays.asList(result);
+		}
+
+		List<ResourceUploadStatus> results = new ArrayList<ResourceUploadStatus>();
+
+		for (Resource resource : resources) {
+			ResourceUploadStatus result = new ResourceUploadStatus();
+			result.setType(ResourceType.VALUESETBINDINGS);
+			String content = FileUtil.getContent(resource);
+			try {
+				Slicings slicings = slicings(content, domain, scope, authorUsername, preloaded);
+				result.setId(slicings.getSourceId());
+				slicings.setDomain(domain);
+				Slicings exist = this.getSlicingsBySourceId(slicings.getSourceId());
+				if (exist != null) {
+					result.setAction(ResourceUploadAction.UPDATE);
+					slicings.setId(exist.getId());
+					slicings.setSourceId(exist.getSourceId()); // shouldn't be necessary, right?
+				} else {
+					result.setAction(ResourceUploadAction.ADD);
+				}
+
+				this.slicingsRepository.save(slicings);
+				result.setStatus(ResourceUploadResult.SUCCESS);
+
+			} catch (Exception e) {
+				result.setStatus(ResourceUploadResult.FAILURE);
+				result.setMessage(e.getMessage());
+			}
+			results.add(result);
+		}
+		return results;
+	}
+	
 
 	@Override
 	public TestCaseDocument generateTestCaseDocument(TestContext c) throws IOException {
@@ -311,6 +490,12 @@ public class HL7V2ResourceLoaderImpl extends HL7V2ResourceLoader {
 		JsonNode messageId = formatObj.findValue("messageId");
 		JsonNode constraintId = formatObj.findValue("constraintId");
 		JsonNode valueSetLibraryId = formatObj.findValue("valueSetLibraryId");
+		JsonNode valueSetBindingId = formatObj.findValue("bindingId");
+		JsonNode slicingsId = formatObj.findValue("slicingId");
+		JsonNode coConstraintsId = formatObj.findValue("coConstraintsId");
+
+		
+		
 		JsonNode dqa = formatObj.findValue("dqa");
 		HL7V2TestContext testContext = new HL7V2TestContext();
 		testContext.setFormat(FORMAT);
@@ -345,8 +530,36 @@ public class HL7V2ResourceLoaderImpl extends HL7V2ResourceLoader {
 			co.setAuthorUsername(authorUsername);
 			co.setPreloaded(preloaded);
 			testContext.setConstraints(co);
-			
 		}
+		
+		if (coConstraintsId != null && !"".equals(coConstraintsId.textValue())) {		
+			CoConstraints cocon = getCoConstraintsBySourceId(coConstraintsId.textValue());		
+			cocon.setDomain(domain);
+			cocon.setScope(scope);
+			cocon.setAuthorUsername(authorUsername);
+			cocon.setPreloaded(preloaded);
+			testContext.setCoConstraints(cocon);
+		}
+		
+		if (slicingsId != null && !"".equals(slicingsId.textValue())) {		
+			Slicings slice = getSlicingsBySourceId(slicingsId.textValue());		
+			slice.setDomain(domain);
+			slice.setScope(scope);
+			slice.setAuthorUsername(authorUsername);
+			slice.setPreloaded(preloaded);
+			testContext.setSlicings(slice);
+		}
+		
+
+		if (valueSetBindingId != null && !"".equals(valueSetBindingId.textValue())) {		
+			ValueSetBindings vsb = getValueSetBindingsBySourceId(valueSetBindingId.textValue());		
+			vsb.setDomain(domain);
+			vsb.setScope(scope);
+			vsb.setAuthorUsername(authorUsername);
+			vsb.setPreloaded(preloaded);
+			testContext.setValueSetBindings(vsb);
+		}
+		
 		try {
 			Resource resource = this.getResource(path + CONSTRAINTS_FILE_PATTERN, rootPath);
 			
