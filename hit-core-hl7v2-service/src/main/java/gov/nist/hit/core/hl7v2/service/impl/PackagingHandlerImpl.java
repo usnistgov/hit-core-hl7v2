@@ -133,6 +133,7 @@ public class PackagingHandlerImpl implements PackagingHandler {
 
 	protected Document toDoc(String xmlSource) {
 		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+		factory.setXIncludeAware(false);
 		factory.setNamespaceAware(true);
 		factory.setIgnoringComments(false);
 		factory.setIgnoringElementContentWhitespace(true);
@@ -201,6 +202,7 @@ public class PackagingHandlerImpl implements PackagingHandler {
 
 	public static Document stringToDom(String xmlSource) {
 		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+		factory.setXIncludeAware(false);
 		factory.setNamespaceAware(true);
 		factory.setIgnoringComments(false);
 		factory.setIgnoringElementContentWhitespace(true);

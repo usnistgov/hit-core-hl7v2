@@ -47,6 +47,7 @@ public class ConstraintManager {
     try {
       if (constraintXml != null) {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        factory.setXIncludeAware(false);
         DocumentBuilder builder = factory.newDocumentBuilder();
         doc = builder.parse(IOUtils.toInputStream(constraintXml));
       }
@@ -62,6 +63,7 @@ public class ConstraintManager {
     try {
       if (constraintXml != null) {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        factory.setXIncludeAware(false);
         DocumentBuilder builder = factory.newDocumentBuilder();
         doc = builder.parse(IOUtils.toInputStream(constraintXml));
       }
