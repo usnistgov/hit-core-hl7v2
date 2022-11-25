@@ -42,7 +42,6 @@ import hl7.v2.validation.content.ConformanceContext;
 import hl7.v2.validation.content.DefaultConformanceContext;
 import hl7.v2.validation.vs.ValueSetLibrary;
 import hl7.v2.validation.vs.ValueSetLibraryImpl;
-import scala.collection.JavaConverters;
 
 public abstract class HL7V2MessageValidator implements MessageValidator {
 
