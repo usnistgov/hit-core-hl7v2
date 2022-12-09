@@ -104,12 +104,11 @@ public class FileValidationHandlerImpl implements FileValidationHandler {
 		ValidationServiceImpl vsi = new ValidationServiceImpl();
 		
 		String rootPath = findFileDirectory(dir, "Profile.xml",false) + "/";
+		List<String> fileTypeErrors = new ArrayList<String>();
 
+		
 		// Profile
 		Resource profile = resourceLoader.getResource("Profile.xml", rootPath);
-		
-		List<String> fileTypeErrors = new ArrayList<String>();
-		
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		org.apache.commons.io.IOUtils.copy(profile.getInputStream(), baos);
 		byte[] bytes = baos.toByteArray();
@@ -118,6 +117,12 @@ public class FileValidationHandlerImpl implements FileValidationHandler {
 			fileTypeErrors.add("Profile file provided is a Constraint file.");
 		} else if (content.contains("<ValueSetLibrary")) {
 			fileTypeErrors.add("Profile file provided is a Value Set file.");
+		}else if (content.contains("<CoConstraintContext")) {
+			fileTypeErrors.add("Profile file provided is a CoConstraintContext file.");
+		}else if (content.contains("<ProfileSlicing")) {
+			fileTypeErrors.add("Profile file provided is a Slicings file.");
+		}else if (content.contains("<ValueSetBindingsContext")) {
+			fileTypeErrors.add("Profile file provided is a ValueSetBindingsContext file.");
 		}
 		
 		// Constraints
@@ -130,6 +135,12 @@ public class FileValidationHandlerImpl implements FileValidationHandler {
 			fileTypeErrors.add("Constraints file provided is a Profile file.");
 		} else if (content.contains("<ValueSetLibrary")) {
 			fileTypeErrors.add("Constraints file provided is a Value Set file.");
+		}else if (content.contains("<CoConstraintContext")) {
+			fileTypeErrors.add("Constraints file provided is a CoConstraintContext file.");
+		}else if (content.contains("<ProfileSlicing")) {
+			fileTypeErrors.add("Contraints file provided is a Slicings file.");
+		}else if (content.contains("<ValueSetBindingsContext")) {
+			fileTypeErrors.add("Contraints file provided is a ValueSetBindingsContext file.");
 		}
 		
 		
@@ -140,10 +151,84 @@ public class FileValidationHandlerImpl implements FileValidationHandler {
 		bytes = baos.toByteArray();
 		content = IOUtils.toString(new ByteArrayInputStream(bytes));	
 		if (content.contains("<ConformanceProfile")) {
-			fileTypeErrors.add("Constraints file provided is a Profile file.");
+			fileTypeErrors.add("Value Set file provided is a Profile file.");
 		} else if (content.contains("<ConformanceContext")) {
-			fileTypeErrors.add("Profile file provided is a Constraint file.");
+			fileTypeErrors.add("Value Set file provided is a Constraint file.");
+		}else if (content.contains("<CoConstraintContext")) {
+			fileTypeErrors.add("Value Set file provided is a CoConstraintContext file.");
+		}else if (content.contains("<ProfileSlicing")) {
+			fileTypeErrors.add("Value Set file provided is a Slicings file.");
+		}else if (content.contains("<ValueSetBindingsContext")) {
+			fileTypeErrors.add("Value Set file provided is a ValueSetBindingsContext file.");
 		}
+		
+		
+		//CoConstraints
+		Resource coConstraints = resourceLoader.getResource("CoConstraints.xml", rootPath);
+		if(coConstraints != null) {
+			baos = new ByteArrayOutputStream();
+			org.apache.commons.io.IOUtils.copy(coConstraints.getInputStream(), baos);
+			bytes = baos.toByteArray();
+			content = IOUtils.toString(new ByteArrayInputStream(bytes));	
+			if (content.contains("<ConformanceProfile")) {
+				fileTypeErrors.add("CoConstraints file provided is a Profile file.");
+			} else if (content.contains("<ConformanceContext")) {
+				fileTypeErrors.add("CoConstraints file provided is a Constraint file.");
+			}else if (content.contains("<ValueSetLibrary")) {
+				fileTypeErrors.add("CoConstraints file provided is a Value Set file.");
+			}else if (content.contains("<ProfileSlicing")) {
+				fileTypeErrors.add("CoConstraints file provided is a Slicings file.");
+			}else if (content.contains("<ValueSetBindingsContext")) {
+				fileTypeErrors.add("CoConstraints file provided is a ValueSetBindingsContext file.");
+			}
+			
+		}
+		
+		
+		
+		//Slicings
+		Resource slicings = resourceLoader.getResource("Slicings.xml", rootPath);
+		if(slicings != null) {
+			baos = new ByteArrayOutputStream();
+			org.apache.commons.io.IOUtils.copy(slicings.getInputStream(), baos);
+			bytes = baos.toByteArray();
+			content = IOUtils.toString(new ByteArrayInputStream(bytes));	
+			if (content.contains("<ConformanceProfile")) {
+				fileTypeErrors.add("Slicing file provided is a Profile file.");
+			} else if (content.contains("<ConformanceContext")) {
+				fileTypeErrors.add("Slicing file provided is a Constraint file.");
+			}else if (content.contains("<ValueSetLibrary")) {
+				fileTypeErrors.add("Slicing file provided is a Value Set file.");
+			}else if (content.contains("<CoConstraintContext")) {
+				fileTypeErrors.add("Slicing file provided is a CoConstraintContext file.");
+			}else if (content.contains("<ValueSetBindingsContext")) {
+				fileTypeErrors.add("Slicing file provided is a ValueSetBindingsContext file.");
+			}
+		}
+		
+		
+		//ValueSetBindings
+		Resource valueSetBindings = resourceLoader.getResource("ValueSetBindings.xml", rootPath);
+		if(valueSetBindings != null) {
+			baos = new ByteArrayOutputStream();
+			org.apache.commons.io.IOUtils.copy(valueSetBindings.getInputStream(), baos);
+			bytes = baos.toByteArray();
+			content = IOUtils.toString(new ByteArrayInputStream(bytes));	
+			if (content.contains("<ConformanceProfile")) {
+				fileTypeErrors.add("Value Set Bindings file provided is a Profile file.");
+			} else if (content.contains("<ConformanceContext")) {
+				fileTypeErrors.add("Value Set Bindings file provided is a Constraint file.");
+			}else if (content.contains("<ValueSetLibrary")) {
+				fileTypeErrors.add("Value Set Bindings file provided is a Value Set file.");
+			}else if (content.contains("<CoConstraintContext")) {
+				fileTypeErrors.add("Value Set Bindings file provided is a CoConstraintContext file.");
+			}else if (content.contains("<ProfileSlicing")) {
+				fileTypeErrors.add("Value Set Bindings file provided is a Slicings file.");
+			}
+		}
+		
+		
+		
 		
 		if (fileTypeErrors.size() >0) {
 			throw new InvalidFileTypeException(fileTypeErrors);
@@ -152,7 +237,11 @@ public class FileValidationHandlerImpl implements FileValidationHandler {
 		
 		ProfileValidationReport report = null;
 		if (profile != null && profile.exists() && constraints != null && constraints.exists() && vs != null &&  vs.exists()) {
-			report = vsi.validationXMLs(profile.getInputStream(),constraints.getInputStream(),vs.getInputStream());
+			InputStream coConstraintsIS = (coConstraints == null)? null : coConstraints.getInputStream();
+			InputStream slicingsIS = (slicings == null)? null : slicings.getInputStream();
+			InputStream valueSetBindingsIS = (valueSetBindings == null)? null : valueSetBindings.getInputStream();		
+			report = vsi.validationXMLs(profile.getInputStream(),constraints.getInputStream(),vs.getInputStream(),coConstraintsIS,slicingsIS,valueSetBindingsIS);
+			
 		}
 
 		return report;
@@ -173,11 +262,22 @@ public class FileValidationHandlerImpl implements FileValidationHandler {
 		// VS
 		Resource vs = resourceLoader.getResource("ValueSets.xml", rootPath);
 		
+		// CoConstraints
+		Resource coConstraints = resourceLoader.getResource("CoConstraints.xml", rootPath);
+		
+		// Slicings
+		Resource slicings = resourceLoader.getResource("Slicings.xml", rootPath);
+		
+		// valueSetBindings
+		Resource valueSetBindings = resourceLoader.getResource("ValueSetBindings.xml", rootPath);
 		
 		
 		ProfileValidationReport report = null;
 		if (profile != null && profile.exists() && constraints != null && constraints.exists() && vs != null &&  vs.exists()) {
-			report = vsi.validationXMLs(profile.getInputStream(),constraints.getInputStream(),vs.getInputStream());
+			InputStream coConstraintsIS = (coConstraints == null)? null : coConstraints.getInputStream();
+			InputStream slicingsIS = (slicings == null)? null : slicings.getInputStream();
+			InputStream valueSetBindingsIS = (valueSetBindings == null)? null : valueSetBindings.getInputStream();
+			report = vsi.validationXMLs(profile.getInputStream(),constraints.getInputStream(),vs.getInputStream(),coConstraintsIS,slicingsIS,valueSetBindingsIS);
 		}
 
 		return report;
