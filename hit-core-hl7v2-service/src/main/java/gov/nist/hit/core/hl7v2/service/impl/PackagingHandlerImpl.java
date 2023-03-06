@@ -199,6 +199,54 @@ public class PackagingHandlerImpl implements PackagingHandler {
 				profileElement.getAttribute("ValueSetLibraryIdentifier") + Instant.now().toEpochMilli());
 		return toString(doc);
 	}
+	
+	@Override
+	public File changeCoConstraintsId(File file) throws Exception {
+		InputStream targetStream = new FileInputStream(file);
+		String content = changeCoConstraintsId(IOUtils.toString(targetStream));
+		FileUtils.writeStringToFile(file, content);
+		return file;
+	}
+
+	@Override
+	public String changeCoConstraintsId(String content) throws Exception {
+		Document doc = stringToDom(content);
+		Element profileElement = (Element) doc.getElementsByTagName("CoConstraintContext").item(0);
+		profileElement.setAttribute("ID", profileElement.getAttribute("ID") + Instant.now().toEpochMilli());
+		return toString(doc);
+	}
+	
+	@Override
+	public File changeSlicingsId(File file) throws Exception {
+		InputStream targetStream = new FileInputStream(file);
+		String content = changeSlicingsId(IOUtils.toString(targetStream));
+		FileUtils.writeStringToFile(file, content);
+		return file;
+	}
+
+	@Override
+	public String changeSlicingsId(String content) throws Exception {
+		Document doc = stringToDom(content);
+		Element profileElement = (Element) doc.getElementsByTagName("ProfileSlicing").item(0);
+		profileElement.setAttribute("ID", profileElement.getAttribute("ID") + Instant.now().toEpochMilli());
+		return toString(doc);
+	}
+	
+	@Override
+	public File changeVsbId(File file) throws Exception {
+		InputStream targetStream = new FileInputStream(file);
+		String content = changeVsbId(IOUtils.toString(targetStream));
+		FileUtils.writeStringToFile(file, content);
+		return file;
+	}
+
+	@Override
+	public String changeVsbId(String content) throws Exception {
+		Document doc = stringToDom(content);
+		Element profileElement = (Element) doc.getElementsByTagName("ValueSetBindingsContext").item(0);
+		profileElement.setAttribute("ID", profileElement.getAttribute("ID") + Instant.now().toEpochMilli());
+		return toString(doc);
+	}
 
 	public static Document stringToDom(String xmlSource) {
 		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();

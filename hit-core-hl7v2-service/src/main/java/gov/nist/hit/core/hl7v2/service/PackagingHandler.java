@@ -17,6 +17,12 @@ public interface PackagingHandler {
 	public File changeConstraintId(File file) throws Exception;
 
 	public File changeVsId(File file) throws Exception;
+	
+	public File changeCoConstraintsId(File coConstraintsFile) throws Exception;
+
+	public File changeSlicingsId(File slicingsFile) throws Exception;
+
+	public File changeVsbId(File vsbFile) throws Exception;
 
 	public File zip(List<File> files, String filename) throws Exception;
 
@@ -25,5 +31,13 @@ public interface PackagingHandler {
 	public String changeConstraintId(String file) throws Exception;
 
 	public String changeVsId(String file) throws Exception;
+	
+	public String changeCoConstraintsId(String coConstraintsFile) throws Exception;
+
+	public String changeSlicingsId(String slicingsFile) throws Exception;
+
+	public String changeVsbId(String vsbFile) throws Exception;
+
+	
 
 }

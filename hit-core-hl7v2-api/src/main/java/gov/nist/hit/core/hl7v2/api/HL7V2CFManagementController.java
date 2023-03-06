@@ -17,6 +17,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringReader;
 import java.security.Principal;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -29,6 +30,14 @@ import java.util.UUID;
 import javax.annotation.PostConstruct;
 import javax.servlet.ServletRequest;
 import javax.servlet.http.HttpServletRequest;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpression;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -51,6 +60,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
 import gov.nist.hit.core.domain.CFTestPlan;
 import gov.nist.hit.core.domain.CFTestStep;
@@ -779,25 +792,28 @@ public class HL7V2CFManagementController {
       if (wrapper.getToken() != null) {
         // Use files to save to database
         GVTSaveInstance si = bundleHandler.createSaveInstance(
-        		CF_RESOURCE_BUNDLE_DIR + "/" + username + "/" + wrapper.getToken(), testPlan);
+        		CF_RESOURCE_BUNDLE_DIR + "/" + authUsername + "/" + wrapper.getToken(), testPlan);
         ipRepository.save(si.ip);
         csRepository.save(si.ct);
         vsRepository.save(si.vs);
         //optionals
+        
         if(si.slicings != null) {
         	slicingsRepository.save(si.slicings);
         }
         if(si.coct != null) {
+        	//if not id generate one random
         	cocsRepository.save(si.coct);
         }
         
         if(si.vsBindings != null) {
+        	//if not id generate one random
         	vsbRepository.save(si.vsBindings);
         }            
         si.tcg.setAuthorUsername(username);
         testPlanService.save((CFTestPlan) si.tcg);
         testPlanService.removeCacheElement(testPlan.getId());
-        FileUtils.deleteDirectory(new File(CF_RESOURCE_BUNDLE_DIR + "/" + username + "/" + wrapper.getToken()));
+        FileUtils.deleteDirectory(new File(CF_RESOURCE_BUNDLE_DIR + "/" + authUsername + "/" + wrapper.getToken()));
       } else {
         testPlanService.save(testPlan);
       }
@@ -909,13 +925,31 @@ public class HL7V2CFManagementController {
 	          new File(CF_RESOURCE_BUNDLE_DIR + "/" + username + "/" + wrapper.getToken() + "/Constraints.xml");
 	      File vsFile =
 	          new File(CF_RESOURCE_BUNDLE_DIR + "/" + username + "/" + wrapper.getToken() + "/ValueSets.xml");
-
+	      File coConstraintsFile =
+		          new File(CF_RESOURCE_BUNDLE_DIR + "/" + username + "/" + wrapper.getToken() + "/CoConstraints.xml");
+		  File slicingsFile =
+		          new File(CF_RESOURCE_BUNDLE_DIR + "/" + username + "/" + wrapper.getToken() + "/Slicings.xml"); 
+		  File vsbFile =
+		          new File(CF_RESOURCE_BUNDLE_DIR + "/" + username + "/" + wrapper.getToken() + "/ValueSetBindings.xml");
+			      
+	      
 	      if (constraintsFile != null) {
 	        packagingHandler.changeConstraintId(constraintsFile);
 	      }
 	      if (vsFile != null) {
 	        packagingHandler.changeVsId(vsFile);
 	      }
+	      if (coConstraintsFile != null) {
+	        packagingHandler.changeCoConstraintsId(coConstraintsFile);
+	      }
+	      if (slicingsFile != null) {
+		        packagingHandler.changeSlicingsId(slicingsFile);
+	      }
+	      if (vsbFile != null) {
+		        packagingHandler.changeVsbId(vsbFile);
+	      }
+	      
+	      
 	      InputStream targetStream = new FileInputStream(profileFile);
 	      String content = IOUtils.toString(targetStream);
 	      String cleanedContent = packagingHandler.removeUnusedAndDuplicateMessages(content, added);
@@ -964,17 +998,21 @@ public class HL7V2CFManagementController {
         ipRepository.save(si.ip);
         csRepository.save(si.ct);
         vsRepository.save(si.vs);
-        //optionals
+        
+        
+        //optionals    
         if(si.slicings != null) {
         	slicingsRepository.save(si.slicings);
         }
         if(si.coct != null) {
+        	//if not id generate one random
         	cocsRepository.save(si.coct);
         }
         
         if(si.vsBindings != null) {
+        	//if not id generate one random
         	vsbRepository.save(si.vsBindings);
-        }
+        } 
         
         si.tcg.setAuthorUsername(username);
         testStepGroupService.save((CFTestStepGroup) si.tcg);       
@@ -1052,6 +1090,38 @@ public class HL7V2CFManagementController {
 
     // return true if testPlan is also deleted, false otherwise
     return res;
+  }
+  
+  
+  private String checkAndFixIdinXML(String xml,String element) {
+	  DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+      DocumentBuilder builder;
+	try {
+		builder = factory.newDocumentBuilder();	
+		Document doc = builder.parse(new InputSource(new StringReader(xml)));
+		XPathFactory xPathfactory = XPathFactory.newInstance();
+		XPath xpath = xPathfactory.newXPath();    
+		
+		XPathExpression expr = xpath.compile("//"+element+"/@ID");
+		Node attrNode = (Node) expr.evaluate(doc, XPathConstants.NODE);
+		if (attrNode != null && !attrNode.getNodeValue().isEmpty()) {
+			return xml;
+		}else {
+			return xml;//TODO
+		}
+		
+		
+	} catch (XPathExpressionException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	} catch (SAXException | IOException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	} catch (ParserConfigurationException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	}
+	  return null;
   }
 
 }
