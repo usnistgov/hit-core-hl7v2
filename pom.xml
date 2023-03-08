@@ -14,12 +14,12 @@
 	</modules>
 
 	<properties>
-		<hitcore.version>1.0.29-LEGACY-SNAPSHOT</hitcore.version>
+		<hitcore.version>1.0.29-LEGACY</hitcore.version>
 		<additionalparam>-Xdoclint:none</additionalparam>
 		<java.version>1.8</java.version>
 		<resourcesValidation.version>1.0.1</resourcesValidation.version>
 		<hl7v2Validation.version>1.5.5-lts.2.11</hl7v2Validation.version>
-		<unifiedreport.version>1.0.10-SNAPSHOT</unifiedreport.version>
+		<unifiedreport.version>1.0.10-LEGACY</unifiedreport.version>
 	</properties>
 
 	<dependencies>
@@ -55,7 +55,9 @@
             <artifactId>hl7-v2-validation</artifactId>
             <version>${hl7v2Validation.version}</version>
         </dependency>
-        <dependency>
+        
+        
+       <dependency>
             <groupId>gov.nist.healthcare.hl7.v2.unifiedreport</groupId>
             <artifactId>validation-proxy</artifactId>
             <version>${unifiedreport.version}</version>
@@ -64,7 +66,7 @@
             <groupId>gov.nist.healthcare.hl7.v2.unifiedreport</groupId>
             <artifactId>report-filter</artifactId>
             <version>${unifiedreport.version}</version>
-        </dependency>
+        </dependency> 
         
         		<dependency>
 			<groupId>gov.nist.healthcare.resources</groupId>
