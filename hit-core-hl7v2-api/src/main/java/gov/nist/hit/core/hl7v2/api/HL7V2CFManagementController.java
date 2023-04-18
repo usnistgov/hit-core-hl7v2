@@ -933,19 +933,19 @@ public class HL7V2CFManagementController {
 		          new File(CF_RESOURCE_BUNDLE_DIR + "/" + username + "/" + wrapper.getToken() + "/ValueSetBindings.xml");
 			      
 	      
-	      if (constraintsFile != null) {
+	      if (constraintsFile != null && constraintsFile.exists()) {
 	        packagingHandler.changeConstraintId(constraintsFile);
 	      }
-	      if (vsFile != null) {
+	      if (vsFile != null && vsFile.exists()) {
 	        packagingHandler.changeVsId(vsFile);
 	      }
-	      if (coConstraintsFile != null) {
+	      if (coConstraintsFile != null && coConstraintsFile.exists()) {
 	        packagingHandler.changeCoConstraintsId(coConstraintsFile);
 	      }
-	      if (slicingsFile != null) {
+	      if (slicingsFile != null && slicingsFile.exists()) {
 		        packagingHandler.changeSlicingsId(slicingsFile);
 	      }
-	      if (vsbFile != null) {
+	      if (vsbFile != null && vsbFile.exists()) {
 		        packagingHandler.changeVsbId(vsbFile);
 	      }
 	      
