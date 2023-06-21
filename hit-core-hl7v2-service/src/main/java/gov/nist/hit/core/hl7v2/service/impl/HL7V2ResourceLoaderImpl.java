@@ -469,6 +469,13 @@ public class HL7V2ResourceLoaderImpl extends HL7V2ResourceLoader {
 			doc.setXmlConstraintsPresent((context.getAddditionalConstraints() != null
 					&& context.getAddditionalConstraints().getXml() != null)
 					|| (context.getConstraints() != null && context.getConstraints().getXml() != null));
+			doc.setXmlValueSetBindingsPresent(
+					context.getValueSetBindings() != null && context.getValueSetBindings().getXml() != null);
+			doc.setXmlCoConstraintsPresent(
+					context.getCoConstraints() != null && context.getCoConstraints().getXml() != null);
+			doc.setXmlSlicingsPresent(
+					context.getSlicings() != null && context.getSlicings().getXml() != null);
+			
 		}
 		return doc;
 	}
