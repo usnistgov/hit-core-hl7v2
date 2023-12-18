@@ -1,0 +1,501 @@
+<html xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:util="http://hl7.nist.gov/data-specs/util" xmlns:fo="http://www.w3.org/1999/XSL/Format">
+   <head>
+      <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+      <title></title><style type="text/css">
+                     @media screen {
+					.message-content legend {text-align:center;font-size:110%; font-weight:bold;}					
+					.message-content .nav-tabs {font-weight:bold;}					
+					.message-content fieldset {text-align:center;}
+                    .message-content maskByMediaType {display:table;}
+					.message-content table tbody tr th {font-size:95%}
+					.message-content table tbody tr td {font-size:100%;}
+					.message-content table tbody tr th {text-align:left;background:#436BEC}
+					.message-content table thead tr th {text-align:center;}
+					.message-content table thead tr th:first-child {width:15%;}
+					.message-content table thead tr th:nth-child(2) {width:30%;}
+					.message-content table thead tr th:nth-child(3) {width:30%;}
+					.message-content table thead tr th:last-child {width:20%;}
+					.message-content table { width:98%;border: 1px groove;table-layout: fixed; margin:0 auto;border-collapse: collapse;}
+					.message-content table  tr { border: 3px groove; }
+					.message-content table  th { border: 2px groove;}
+					.message-content table  td { border: 2px groove; }
+					.message-content table thead {border: 1px groove;background:#436BEC;text-align:left;}
+					.message-content table tbody tr td {text-align:left}
+					.message-content  .Field  { font: bold; background-color: rgb(198, 222, 255); }
+					.message-content  td.Component {padding-left:15px;}
+					.message-content  td.SubComponent {padding-left:25px;}
+					.message-content  td.Field + td.noData {background:rgb(198, 222, 255);}
+					.message-content  td.noData {background:#B8B8B8;}
+					.message-content .accordion-heading { font-weight:bold; font-size:90%; }	
+					.message-content .accordion-heading i.fa:after { content: "\00a0 "; }									
+					.message-content  panel { margin: 10px 5px 5px 5px; }
+                    }
+                    @media print {
+					.message-content legend {text-align:center;font-size:110%; font-weight:bold;}					
+					.message-content .nav-tabs {font-weight:bold;}					
+					.message-content  {text-align:center;page-break-inside: avoid;}
+                    .message-content maskByMediaType {display:table;}
+                    .message-content  table tbody tr th {font-size:80%}
+                    .message-content  table tbody tr td {font-size:70%;}
+                    .message-content  table tbody tr th {text-align:left;background:#436BEC}
+                    .message-content  table thead tr th {text-align:center;font-size:80%;}
+                    .message-content  legend {text-align:center;font-size:70%;}
+                    .message-content  table thead tr th:first-child {width:15%;}
+                    .message-content  table thead tr th:nth-child(2) {width:30%;}
+                    .message-content  table thead tr th:nth-child(3) {width:30%;}
+                    .message-content  table thead tr th:last-child {width:20%;}
+					.message-content  table { width:98%;border: 1px groove;table-layout: fixed; margin:0 auto;border-collapse: collapse;page-break-inside: avoid;}
+                    .message-content  table  tr { border: 3px groove; }
+                    .message-content  table  th { border: 2px groove;}
+                    .message-content  table  td { border: 2px groove; }
+                    .message-content  table thead {border: 1px groove;background:#436BEC;text-align:left;}
+                    .message-content  table tbody tr td {text-align:left}
+					.message-content  .Field  { font: bold; background-color: rgb(198, 222, 255); }
+                    .message-content  .Component {padding-left:10px;}
+                    .message-content  .SubComponent {padding-left:20px;}
+                    .message-content td.noData {background:#B8B8B8;}
+					.message-content  td.noData {background:rgb(198, 222, 255);;}
+					.message-content .accordion-heading { font-weight:bold;  font-size:90%; }										
+					.message-content .accordion-heading i.fa:after { content: "\00a0 "; }									
+					.message-content  panel { margin: 10px 5px 5px 5px; }
+                    }
+                    @page {
+                    counter-increment: page;
+					@bottom-center {
+                    content: "Page " counter(page);
+                    }
+                    }
+                    @page :left {
+                    margin-left: 5%;
+                    margin-right: 5%;
+                    }
+                    @page :right {
+                    margin-left: 5%;
+                    margin-right: 5%;
+                    }
+		</style></head>
+   <body>
+      <div class="message-content">
+<fieldset>
+<legend>MSH : Message Header</legend>
+		<table>
+		<tr>
+		<th>Location</th>
+		<th>Data Element</th>
+		<th>Data</th>
+		<th>Categorization</th>
+		</tr>
+		<tr>
+		<td class="Field">MSH-1
+		</td>
+		<td class="Field">Field Separator
+		</td>
+		<td class="Field">|
+		</td>
+		<td class="Field">
+		</td></tr>
+		<tr>
+		<td class="Field">MSH-2
+		</td>
+		<td class="Field">Encoding Characters
+		</td>
+		<td class="Field">^~\&amp;
+		</td>
+		<td class="Field">
+		</td></tr>
+		<tr>
+		<td class="Field">MSH-7
+		</td>
+		<td class="Field">Date/Time of Message
+		</td>
+		<td class="Field">20220901131443-0400
+		</td>
+		<td class="Field">
+		</td></tr>
+		<tr>
+		<td class="Field">MSH-9
+		</td>
+		<td class="Field">Message Type
+		</td>
+		<td class="Field">
+		</td>
+		<td class="Field">
+		</td></tr>
+					<tr>
+					<td class="Component">MSH-9.1
+					</td>
+					<td class="Component">Message Code
+					</td>
+					<td class="Data">VXU
+					</td>
+					<td class="noData">
+					</td></tr>
+					<tr>
+					<td class="Component">MSH-9.2
+					</td>
+					<td class="Component">Trigger Event
+					</td>
+					<td class="Data">V04
+					</td>
+					<td class="noData">
+					</td></tr>
+					<tr>
+					<td class="Component">MSH-9.3
+					</td>
+					<td class="Component">Message Structure
+					</td>
+					<td class="Data">VXU_V04
+					</td>
+					<td class="noData">
+					</td></tr>
+		<tr>
+		<td class="Field">MSH-10
+		</td>
+		<td class="Field">Message Control ID
+		</td>
+		<td class="Field">to220901181443694222
+		</td>
+		<td class="Field">
+		</td></tr>
+		<tr>
+		<td class="Field">MSH-11
+		</td>
+		<td class="Field">Processing ID
+		</td>
+		<td class="Field">
+		</td>
+		<td class="Field">
+		</td></tr>
+					<tr>
+					<td class="Component">MSH-11.1
+					</td>
+					<td class="Component">Processing ID
+					</td>
+					<td class="Data">T
+					</td>
+					<td class="noData">
+					</td></tr>
+		<tr>
+		<td class="Field">MSH-12
+		</td>
+		<td class="Field">Version ID
+		</td>
+		<td class="Field">
+		</td>
+		<td class="Field">
+		</td></tr>
+					<tr>
+					<td class="Component">MSH-12.1
+					</td>
+					<td class="Component">Version ID
+					</td>
+					<td class="Data">2.5.1
+					</td>
+					<td class="noData">
+					</td></tr>
+		</table>
+		<br/>
+</fieldset>
+<fieldset>
+<legend>PID : Patient Identification</legend>
+		<table>
+		<tr>
+		<th>Location</th>
+		<th>Data Element</th>
+		<th>Data</th>
+		<th>Categorization</th>
+		</tr>
+		<tr>
+		<td class="Field">PID-3
+		</td>
+		<td class="Field">Patient Identifier List
+		</td>
+		<td class="Field">
+		</td>
+		<td class="Field">
+		</td></tr>
+					<tr>
+					<td class="Component">PID-3.1
+					</td>
+					<td class="Component">ID Number
+					</td>
+					<td class="Data">1013634402V344471
+					</td>
+					<td class="noData">
+					</td></tr>
+					<tr>
+					<td class="Component">PID-3.5
+					</td>
+					<td class="Component">Identifier Type Code
+					</td>
+					<td class="Data">MR
+					</td>
+					<td class="noData">
+					</td></tr>
+		<tr>
+		<td class="Field">PID-5
+		</td>
+		<td class="Field">Patient Name
+		</td>
+		<td class="Field">
+		</td>
+		<td class="Field">
+		</td></tr>
+					<tr>
+					<td class="Component">PID-5.1
+					</td>
+					<td class="Component">Family Name
+					</td>
+					<td class="noData">
+					</td>
+					<td class="noData">
+					</td></tr>
+							<tr>
+							<td class="SubComponent">PID-5.1.1
+							</td>
+							<td class="SubComponent">Surname
+							</td>
+							<td class="Data">CDCIZGONE
+							</td>
+							<td class="noData">
+							</td></tr>
+		</table>
+		<br/>
+</fieldset>
+<fieldset>
+<legend>NK1[*]</legend>
+<diV>
+<fieldset>
+<legend>NK1 : Next of Kin / Associated Parties</legend>
+		<table>
+		<tr>
+		<th>Location</th>
+		<th>Data Element</th>
+		<th>Data</th>
+		<th>Categorization</th>
+		</tr>
+		<tr>
+		<td class="Field">NK1-1
+		</td>
+		<td class="Field">Set ID - NK1
+		</td>
+		<td class="Field">1
+		</td>
+		<td class="Field">
+		</td></tr>
+		</table>
+		<br/>
+</fieldset>
+<fieldset>
+<legend>NK1 : Next of Kin / Associated Parties</legend>
+		<table>
+		<tr>
+		<th>Location</th>
+		<th>Data Element</th>
+		<th>Data</th>
+		<th>Categorization</th>
+		</tr>
+		<tr>
+		<td class="Field">NK1-1
+		</td>
+		<td class="Field">Set ID - NK1
+		</td>
+		<td class="Field">2
+		</td>
+		<td class="Field">
+		</td></tr>
+		</table>
+		<br/>
+</fieldset>
+</div>
+</fieldset>
+<fieldset>
+<legend>ORC : Common Order</legend>
+		<table>
+		<tr>
+		<th>Location</th>
+		<th>Data Element</th>
+		<th>Data</th>
+		<th>Categorization</th>
+		</tr>
+		<tr>
+		<td class="Field">ORC-1
+		</td>
+		<td class="Field">Order Control
+		</td>
+		<td class="Field">RE
+		</td>
+		<td class="Field">
+		</td></tr>
+		</table>
+		<br/>
+</fieldset>
+<fieldset>
+<legend>RXA : Pharmacy/Treatment Administration</legend>
+		<table>
+		<tr>
+		<th>Location</th>
+		<th>Data Element</th>
+		<th>Data</th>
+		<th>Categorization</th>
+		</tr>
+		<tr>
+		<td class="Field">RXA-1
+		</td>
+		<td class="Field">Give Sub-ID Counter
+		</td>
+		<td class="Field">0
+		</td>
+		<td class="Field">
+		</td></tr>
+		<tr>
+		<td class="Field">RXA-2
+		</td>
+		<td class="Field">Administration Sub-ID Counter
+		</td>
+		<td class="Field">1
+		</td>
+		<td class="Field">
+		</td></tr>
+		<tr>
+		<td class="Field">RXA-3
+		</td>
+		<td class="Field">Date/Time Start of Administration
+		</td>
+		<td class="Field">20220901
+		</td>
+		<td class="Field">
+		</td></tr>
+		<tr>
+		<td class="Field">RXA-4
+		</td>
+		<td class="Field">Date/Time End of Administration
+		</td>
+		<td class="Field">
+		</td>
+		<td class="Field">
+		</td></tr>
+		<tr>
+		<td class="Field">RXA-5
+		</td>
+		<td class="Field">Administered Code
+		</td>
+		<td class="Field">
+		</td>
+		<td class="Field">
+		</td></tr>
+		<tr>
+		<td class="Field">RXA-6
+		</td>
+		<td class="Field">Administered Amount
+		</td>
+		<td class="Field">999
+		</td>
+		<td class="Field">
+		</td></tr>
+		</table>
+		<br/>
+</fieldset>
+<fieldset>
+<legend>OBX[*]</legend>
+<diV>
+<fieldset>
+<legend>OBX : Observation/Result</legend>
+		<table>
+		<tr>
+		<th>Location</th>
+		<th>Data Element</th>
+		<th>Data</th>
+		<th>Categorization</th>
+		</tr>
+		<tr>
+		<td class="Field">OBX-2
+		</td>
+		<td class="Field">Value Type
+		</td>
+		<td class="Field">CE
+		</td>
+		<td class="Field">
+		</td></tr>
+		<tr>
+		<td class="Field">OBX-3
+		</td>
+		<td class="Field">Observation Identifier
+		</td>
+		<td class="Field">
+		</td>
+		<td class="Field">
+		</td></tr>
+		<tr>
+		<td class="Field">OBX-4
+		</td>
+		<td class="Field">Observation Sub-ID
+		</td>
+		<td class="Field">1
+		</td>
+		<td class="Field">
+		</td></tr>
+		<tr>
+		<td class="Field">OBX-11
+		</td>
+		<td class="Field">Observation Result Status
+		</td>
+		<td class="Field">F
+		</td>
+		<td class="Field">
+		</td></tr>
+		</table>
+		<br/>
+</fieldset>
+<fieldset>
+<legend>OBX : Observation/Result</legend>
+		<table>
+		<tr>
+		<th>Location</th>
+		<th>Data Element</th>
+		<th>Data</th>
+		<th>Categorization</th>
+		</tr>
+		<tr>
+		<td class="Field">OBX-2
+		</td>
+		<td class="Field">Value Type
+		</td>
+		<td class="Field">CE
+		</td>
+		<td class="Field">
+		</td></tr>
+		<tr>
+		<td class="Field">OBX-3
+		</td>
+		<td class="Field">Observation Identifier
+		</td>
+		<td class="Field">
+		</td>
+		<td class="Field">
+		</td></tr>
+		<tr>
+		<td class="Field">OBX-4
+		</td>
+		<td class="Field">Observation Sub-ID
+		</td>
+		<td class="Field">1
+		</td>
+		<td class="Field">
+		</td></tr>
+		<tr>
+		<td class="Field">OBX-11
+		</td>
+		<td class="Field">Observation Result Status
+		</td>
+		<td class="Field">F
+		</td>
+		<td class="Field">
+		</td></tr>
+		</table>
+		<br/>
+</fieldset>
+</div>
+</fieldset></div>
+   </body>
+</html>

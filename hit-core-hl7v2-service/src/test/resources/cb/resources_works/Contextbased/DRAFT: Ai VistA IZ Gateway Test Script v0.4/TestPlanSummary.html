@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Test Plan Summary</title>
+
+<style>
+h1 {
+	color: #000099;
+	text-align: center;
+	font-family: "Cambria";
+}
+
+h2 {
+	color: #0066ff;
+	font-family: "Cambria";
+}
+
+h3 {
+	font-weight: bold;
+}
+
+table {
+    width: 100%;
+}
+
+table, th, td {
+   border: 1px solid black;
+}
+
+th {
+    text-align: center;
+}
+
+</style>
+</head>
+<body>
+
+	<h1>Test Plan Summary</h1>
+	<h1>DRAFT: Ai VistA IZ Gateway Test Script v0.4</h1>
+
+	<h3>Description</h3><br/><h3>Test Objectives</h3><br/>
+<h2>Test Case Group: DAYSHR</h2>
+<h3>Description</h3>null<br/><h3>Test Objectives</h3>null<br/>
+This test group uses the VistA DAYSHR (Pre-32B) environment to test sending new vaccine administrations as historical doses
+<br/>
+<table>
+<tr>
+<th>Test Case</th>
+<th>Test Case 1 DAYSHR</th>
+</tr>
+<tr>
+<td colspan='2'><h3>Description</h3>null<br/><h3>Test Objectives</h3>null<br/></td>
+</tr>
+<tr>
+<th colspan='2'>Test Steps</th>
+</tr>
+<tr>
+<th>Provider Sends VXU for HX 18YO HIB</th>
+<td><h3>Description</h3><p>This test evaluates the capability of an Multi-Jurisdictional Provider (Sender) technology to send a SubmitSingleMessage containing a VXU message via the IZ Gateway operation that conforms to the SOAP 1.2 standard and IZ Gateway WSDL. This is verified interactively with the Jurisidiction (IIS) Test Partner which should send the ACK message in response to the VXU message.</p><p>An 18-year old veteran is vaccinated with Haemophilus influenzae type b as a single dose.<br><br></p><br/><h3>Test Objectives</h3><p><strong>Verify readiness of the IIS partner to receive and respond to IZ-Gateway standard messages:&nbsp;</strong>The IIS that will be receiving vaccination information or queries from a multi-jurisdictional provider is configured to successfully receive HL7 messages that conform to the IZ Gateway HL7 v2.5.1 IG for Multi-Jurisdiction Provider IZ Messaging and respond to these messages with associated ACK and RSP HL7 messages that conform to the HL7 2.5.1 Immunization Implementation Guide.<strong><br></strong></p><p><strong>Verify readiness of the Multi-Jurisdictional Provider partner to send standard messages via the IZ-Gateway:&nbsp;</strong>The Multi-Jurisdictional Provider that will be sending vaccination information or queries from a is configured to successfully receive send HL7 messages that conform to the IZ Gateway HL7 v2.5.1 IG for Multi-Jurisdiction Provider IZ Messaging.</p><br/></td>
+</tr>
+<tr>
+<th>New Test Step</th>
+<td><h3>Description</h3>null<br/><h3>Test Objectives</h3>null<br/></td>
+</tr>
+</table>
+<br/>
+
+
+</body>
+</html>

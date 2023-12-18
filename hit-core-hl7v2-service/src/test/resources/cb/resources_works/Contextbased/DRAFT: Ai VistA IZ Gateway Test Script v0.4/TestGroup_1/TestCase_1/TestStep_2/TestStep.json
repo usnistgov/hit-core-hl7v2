@@ -1,0 +1,18 @@
+{
+    "hl7v2": {
+        "constraintId": "6349b594aa52d55524bee8d1_6351a40c22528b70eeebe592_C",
+        "messageId": "6349b594aa52d55524bee8d1_6351a40c22528b70eeebe592_630bbf61ef12678d0f3cb2a4",
+        "valueSetLibraryId": "6349b594aa52d55524bee8d1_6351a40c22528b70eeebe592_VS",
+        "bindingId": "6349b594aa52d55524bee8d1_6351a40c22528b70eeebe592_B",
+        "coConstraintsId": "6349b594aa52d55524bee8d1_6351a40c22528b70eeebe592_CC",
+        "slicingId": "6349b594aa52d55524bee8d1_6351a40c22528b70eeebe592_S"
+    },
+    "name": "New Test Step",
+    "description": "",
+    "id": -6176577773607947040,
+    "position": 2,
+    "type": "TA_RESPONDER",
+    "protocols": [
+        "soap"
+    ]
+}

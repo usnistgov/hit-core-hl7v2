@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<ProfileSlicing ID="6349b594aa52d55524bee8d1_6351a40c22528b70eeebe592_S">
+  <SegmentSlicing>
+    <Message ID="630bbf61ef12678d0f3cb2a4">
+      <GroupContext ID="630bbf61ef12678d0f3cb2a4">
+        <AssertionSlicing Position="1">
+          <Slice Ref="MSH_TEST">
+            <Description>If MSH-1 (Field Separator) is valued</Description>
+            <Assertion>
+              <Presence Path="1[1]"/>
+            </Assertion>
+          </Slice>
+        </AssertionSlicing>
+      </GroupContext>
+    </Message>
+  </SegmentSlicing>
+  <FieldSlicing>
+    <SegmentContext ID="OBX_TEST-111">
+      <AssertionSlicing Position="3">
+        <Slice Ref="CWE_TEST2">
+          <Description>If CWE.1 (Identifier) is valued</Description>
+          <Assertion>
+            <Presence Path="1[1]"/>
+          </Assertion>
+        </Slice>
+      </AssertionSlicing>
+    </SegmentContext>
+  </FieldSlicing>
+</ProfileSlicing>

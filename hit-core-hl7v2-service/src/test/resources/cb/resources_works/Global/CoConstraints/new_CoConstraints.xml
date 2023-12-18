@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<CoConstraintContext ID="6349b594aa52d55524bee8d1_6351a40c22528b70eeebe592_CC">
+  <ByMessage ID="630bbf61ef12678d0f3cb2a4">
+    <Context Name="PATIENT" Path="7[*]">
+      <Segment Name="PV1" Path="1[*]">
+        <SimpleTable/>
+      </Segment>
+    </Context>
+  </ByMessage>
+</CoConstraintContext>

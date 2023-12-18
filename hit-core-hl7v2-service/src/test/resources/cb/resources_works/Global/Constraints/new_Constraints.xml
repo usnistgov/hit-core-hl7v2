@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<ConformanceContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ID="6349b594aa52d55524bee8d1_6351a40c22528b70eeebe592_C" UUID="6349b594aa52d55524bee8d1_6351a40c22528b70eeebe592_C" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/Jungyubw/NIST_healthcare_hl7_v2_profile_schema/master/Schema/NIST%20Validation%20Schema/ConformanceContext.xsd">
+  <MetaData Date="No Date Info" Name="TEST COCON" OrgName="No Org Info" Version="2.7.1"/>
+  <Predicates>
+    <Datatype/>
+    <Segment/>
+    <Group/>
+    <Message/>
+  </Predicates>
+  <Constraints>
+    <Datatype>
+      <ByID ID="TM">
+        <Constraint ID="TM_DateTimeConstraint">
+          <Description>The value SHALL follow the Date/Time pattern 'HH[MM[SS[.S[S[S[S]]]]]][+/-ZZZZ]'.</Description>
+          <Assertion>
+            <Format Path="." Regex="^(\d{2}|\d{4}|\d{6}|\d{6}\.\d|\d{6}\.\d{2}|\d{6}\.\d{3}|\d{6}\.\d{4})([+-]\d{4})?$"/>
+          </Assertion>
+        </Constraint>
+      </ByID>
+      <ByID ID="DT">
+        <Constraint ID="DT_DateTimeConstraint">
+          <Description>The value SHALL follow the Date/Time pattern 'YYYY[MM[DD]]'.</Description>
+          <Assertion>
+            <Format Path="." Regex="^(\d{4}|\d{6}|\d{8})$"/>
+          </Assertion>
+        </Constraint>
+      </ByID>
+      <ByID ID="DTM">
+        <Constraint ID="DTM_DateTimeConstraint">
+          <Description>The value SHALL follow the Date/Time pattern 'YYYY[MM[DD[HH[MM[SS[.S[S[S[S]]]]]]]]][+/-ZZZZ]'.</Description>
+          <Assertion>
+            <Format Path="." Regex="^(\d{4}|\d{6}|\d{8}|\d{10}|\d{12}|\d{14}|\d{14}\.\d|\d{14}\.\d{2}|\d{14}\.\d{3}|\d{14}\.\d{4})([+-]\d{4})?$"/>
+          </Assertion>
+        </Constraint>
+      </ByID>
+    </Datatype>
+    <Segment>
+      <ByID ID="PID_TEST">
+        <Constraint ID="AAAA" Strength="SHALL">
+          <Description>1 (ID Number) shall contain the value 'aaaab'. IN The second occurrence of PID-3 (Patient Identifier List)</Description>
+          <Assertion>
+            <SubContext Path="3[2]">
+              <PlainText IgnoreCase="false" NotPresentBehavior="PASS" Path="1[1]" Text="aaaab"/>
+            </SubContext>
+          </Assertion>
+        </Constraint>
+      </ByID>
+      <ByID ID="OBX_TEST-111">
+        <Constraint ID="AA" Strength="SHALL">
+          <Description>OBX-1 (Set ID - OBX) shall contain the value '1'.</Description>
+          <Assertion>
+            <PlainText IgnoreCase="false" NotPresentBehavior="PASS" Path="1[1]" Text="1"/>
+          </Assertion>
+        </Constraint>
+      </ByID>
+    </Segment>
+    <Group/>
+    <Message/>
+  </Constraints>
+</ConformanceContext>
