@@ -82,6 +82,7 @@ public class BundleHandlerImpl implements BundleHandler {
 	}
 
 	//not used
+	
 	@Override 
 	public GVTSaveInstance createSaveInstance(String dir, String domain, String authorUsername, boolean preloaded)
 			throws IOException, ProfileParserException {
@@ -185,6 +186,7 @@ public class BundleHandlerImpl implements BundleHandler {
 		return save;
 	}
 
+	
 	private GVTSaveInstance setSaveInstanceValues(String dir, GVTSaveInstance save, Set<CFTestStep> testSteps,
 			AbstractTestCase tp) throws IOException, ProfileParserException {
 		File testCasesFile = new File(dir + "/TestCases.json");
@@ -283,7 +285,11 @@ public class BundleHandlerImpl implements BundleHandler {
 
 			// ---
 			ConformanceProfile conformanceProfile = new ConformanceProfile();
-			conformanceProfile.setJson(resourceLoader.jsonConformanceProfile(p.getXml(), messageId, c.getXml(), null));
+//			conformanceProfile.setJson(resourceLoader.jsonConformanceProfile(p.getXml(), messageId, c.getXml(), null));
+//TODO make sure this enhanced works
+			conformanceProfile.setJson(resourceLoader.jsonConformanceProfileEnhanced(p.getXml(), messageId, c.getXml(), null,vsb.getXml(),cc.getXml(),slice.getXml()));
+
+			
 			conformanceProfile.setXml(resourceLoader.getConformanceProfileContent(p.getXml(), messageId));
 			conformanceProfile.setDomain(tp.getDomain());
 			conformanceProfile.setScope(tp.getScope());

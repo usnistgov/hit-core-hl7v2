@@ -789,6 +789,7 @@ public class CBManagementController {
 	@Transactional(value = "transactionManager")
 	public ResourceUploadStatus saveZip(ServletRequest request, Principal p, @RequestBody Map<String, Object> params,
 			Authentication u) throws MessageUploadException {
+		boolean isAdmin = false;
 		try {
 
 			String token = params.get("token").toString();
@@ -796,6 +797,7 @@ public class CBManagementController {
 			// TODO: Check nullity
 
 			String username = userIdService.getCurrentUserName(p);
+			isAdmin = userService.isAdmin(username);
 			String directory = CB_RESOURCE_BUNDLE_DIR + "/" + token;
 
 			// ADD globals
@@ -849,11 +851,16 @@ public class CBManagementController {
 			return result;
 
 		} catch (Exception e) {
-			e.printStackTrace();
+			e.printStackTrace();		
 			ResourceUploadStatus result = new ResourceUploadStatus();
 			result.setAction(ResourceUploadAction.ADD);
 			result.setStatus(ResourceUploadResult.FAILURE);
-			result.setMessage(e.getMessage());
+			if(isAdmin){		
+				result.setMessage(e.getMessage());
+			}else {
+				result.setMessage("An exception occured");
+			}
+			
 			return result;
 		}
 	}

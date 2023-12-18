@@ -600,11 +600,20 @@ public class HL7V2ResourceLoaderImpl extends HL7V2ResourceLoader {
 				ConformanceProfile conformanceProfile = new ConformanceProfile();
 				IntegrationProfile integrationProfile = getIntegrationProfile(messageId.textValue());
 				
-				conformanceProfile.setJson(jsonConformanceProfile(integrationProfile.getXml(), messageId.textValue(),
-						testContext.getConstraints() != null ? testContext.getConstraints().getXml() : null,
-						testContext.getAddditionalConstraints() != null
-								? testContext.getAddditionalConstraints().getXml() : null));
+//				conformanceProfile.setJson(jsonConformanceProfile(integrationProfile.getXml(), messageId.textValue(),
+//						testContext.getConstraints() != null ? testContext.getConstraints().getXml() : null,
+//						testContext.getAddditionalConstraints() != null
+//								? testContext.getAddditionalConstraints().getXml() : null));
 			
+				conformanceProfile.setJson(jsonConformanceProfileEnhanced(integrationProfile.getXml(), messageId.textValue(),
+						testContext.getConstraints() != null ? testContext.getConstraints().getXml() : null,
+						testContext.getAddditionalConstraints() != null	? testContext.getAddditionalConstraints().getXml() : null,
+						testContext.getValueSetBindings() != null ? testContext.getValueSetBindings().getXml() : null,
+						testContext.getCoConstraints() != null ? testContext.getCoConstraints().getXml() : null,
+						testContext.getSlicings() != null ? testContext.getSlicings().getXml() : null
+						));
+
+				
 				conformanceProfile
 						.setXml(getConformanceProfileContent(integrationProfile.getXml(), messageId.textValue()));
 				
@@ -632,9 +641,18 @@ public class HL7V2ResourceLoaderImpl extends HL7V2ResourceLoader {
 				content = packagingHandler.changeProfileId(content);
 				String messageID = getMessageId(content);
 				ConformanceProfile conformanceProfile = new ConformanceProfile();
-				conformanceProfile.setJson(
-						jsonConformanceProfile(content, messageID, null, testContext.getAddditionalConstraints() != null
-								? testContext.getAddditionalConstraints().getXml() : null));
+//				conformanceProfile.setJson(
+//						jsonConformanceProfile(content, messageID, null, testContext.getAddditionalConstraints() != null
+//								? testContext.getAddditionalConstraints().getXml() : null));
+
+				conformanceProfile.setJson(jsonConformanceProfileEnhanced(content, messageId.textValue(),
+						testContext.getConstraints() != null ? testContext.getConstraints().getXml() : null,
+						testContext.getAddditionalConstraints() != null	? testContext.getAddditionalConstraints().getXml() : null,
+						testContext.getValueSetBindings() != null ? testContext.getValueSetBindings().getXml() : null,
+						testContext.getCoConstraints() != null ? testContext.getCoConstraints().getXml() : null,
+						testContext.getSlicings() != null ? testContext.getSlicings().getXml() : null
+						));
+				
 				conformanceProfile.setXml(getConformanceProfileContent(content, messageID));
 				conformanceProfile.setDomain(domain);
 				conformanceProfile.setScope(scope);
@@ -703,6 +721,14 @@ public class HL7V2ResourceLoaderImpl extends HL7V2ResourceLoader {
 				additionalConstraintsXml);
 	}
 
+	@Override
+	public ProfileModel parseEnhanced(String integrationProfileXml, String conformanceProfileId, String constraintsXml,
+			String additionalConstraintsXml, String valueSetBindings, String coConstraints,	String slicings) throws ProfileParserException {
+		return profileParser.parseEnhanced(integrationProfileXml, conformanceProfileId, constraintsXml,	additionalConstraintsXml,
+				valueSetBindings, coConstraints, slicings);
+	}
+	
+	
 	@Override
 	public VocabularyLibrary vocabLibrary(String content, String domain, TestScope scope, String authorUsername,
 			boolean preloaded) throws JsonGenerationException, JsonMappingException, IOException {
