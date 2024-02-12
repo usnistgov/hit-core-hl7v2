@@ -497,8 +497,8 @@ public class HL7V2ResourceLoaderImpl extends HL7V2ResourceLoader {
 		JsonNode messageId = formatObj.findValue("messageId");
 		JsonNode constraintId = formatObj.findValue("constraintId");
 		JsonNode valueSetLibraryId = formatObj.findValue("valueSetLibraryId");
-		JsonNode valueSetBindingId = formatObj.findValue("bindingId");
-		JsonNode slicingsId = formatObj.findValue("slicingId");
+		JsonNode valueSetBindingsId = formatObj.findValue("valueSetBindingsId");
+		JsonNode slicingsId = formatObj.findValue("slicingsId");
 		JsonNode coConstraintsId = formatObj.findValue("coConstraintsId");
 
 		
@@ -558,8 +558,8 @@ public class HL7V2ResourceLoaderImpl extends HL7V2ResourceLoader {
 		}
 		
 
-		if (valueSetBindingId != null && !"".equals(valueSetBindingId.textValue())) {		
-			ValueSetBindings vsb = getValueSetBindingsBySourceId(valueSetBindingId.textValue());		
+		if (valueSetBindingsId != null && !"".equals(valueSetBindingsId.textValue())) {		
+			ValueSetBindings vsb = getValueSetBindingsBySourceId(valueSetBindingsId.textValue());		
 			vsb.setDomain(domain);
 			vsb.setScope(scope);
 			vsb.setAuthorUsername(authorUsername);
