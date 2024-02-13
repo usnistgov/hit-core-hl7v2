@@ -287,7 +287,18 @@ public class BundleHandlerImpl implements BundleHandler {
 			ConformanceProfile conformanceProfile = new ConformanceProfile();
 //			conformanceProfile.setJson(resourceLoader.jsonConformanceProfile(p.getXml(), messageId, c.getXml(), null));
 //TODO make sure this enhanced works
-			conformanceProfile.setJson(resourceLoader.jsonConformanceProfileEnhanced(p.getXml(), messageId, c.getXml(), null,vsb.getXml(),cc.getXml(),slice.getXml()));
+			String vsbXML = null,ccXML = null,sliceXML = null;
+			if (vsb != null) {
+				vsbXML = vsb.getXml();
+			}
+			if (cc != null) {
+				ccXML = vsb.getXml();
+			}
+			if (slice != null) {
+				sliceXML = vsb.getXml();
+			}
+			conformanceProfile.setJson(resourceLoader.jsonConformanceProfileEnhanced(p.getXml(), messageId, c.getXml(), null,vsbXML,ccXML,sliceXML));
+
 
 			
 			conformanceProfile.setXml(resourceLoader.getConformanceProfileContent(p.getXml(), messageId));
