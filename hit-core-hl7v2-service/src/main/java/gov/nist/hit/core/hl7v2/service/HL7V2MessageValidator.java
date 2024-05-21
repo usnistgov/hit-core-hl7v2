@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import gov.nist.auth.hit.core.domain.Account;
@@ -148,6 +150,9 @@ public abstract class HL7V2MessageValidator implements MessageValidator {
 				}
 				
 				
+				CloseableHttpClient httpClient = HttpClientBuilder.create().build();
+				
+				
 					
 				if (configuration != null) {					
 					if (newversion) {
@@ -160,7 +165,7 @@ public abstract class HL7V2MessageValidator implements MessageValidator {
 								slicingsIS,
 								conformanceProfielId,
 								Context.valueOf(contextType),
-								configuration);
+								configuration,httpClient);
 					}else {
 						//to be removed 
 						String valueSets = v2TestContext.getVocabularyLibrary().getXml();
@@ -180,7 +185,7 @@ public abstract class HL7V2MessageValidator implements MessageValidator {
 								slicingsIS,
 								conformanceProfielId,
 								Context.valueOf(contextType),
-								null);
+								null,httpClient);
 					}else {
 						//to be removed
 						String valueSets = v2TestContext.getVocabularyLibrary().getXml();
