@@ -497,10 +497,24 @@ public class HL7V2ResourceLoaderImpl extends HL7V2ResourceLoader {
 		JsonNode messageId = formatObj.findValue("messageId");
 		JsonNode constraintId = formatObj.findValue("constraintId");
 		JsonNode valueSetLibraryId = formatObj.findValue("valueSetLibraryId");
+		
 		JsonNode valueSetBindingsId = formatObj.findValue("valueSetBindingsId");
+		if (valueSetBindingsId == null) {
+			valueSetBindingsId = formatObj.findValue("bindingId");
+		}
 		JsonNode slicingsId = formatObj.findValue("slicingsId");
+		if (slicingsId == null) {
+			slicingsId = formatObj.findValue("slicingId");
+		}
 		JsonNode coConstraintsId = formatObj.findValue("coConstraintsId");
-
+		//yes I know it the same... it's there in case the alternate id changes...
+		if (coConstraintsId == null) {
+			coConstraintsId = formatObj.findValue("bindingId");
+		}
+		
+		
+		
+		
 		
 		
 		JsonNode dqa = formatObj.findValue("dqa");
