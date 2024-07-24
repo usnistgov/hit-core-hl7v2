@@ -130,8 +130,7 @@ public abstract class HL7V2MessageValidator implements MessageValidator {
 				
 				
 			
-				
-				boolean newversion = true;		
+			
 				
 				InputStream valueSetLibraryIS = null ,valueSetBindingsIS = null,coConstraintsIS= null,slicingsIS = null;
 				if (v2TestContext.getVocabularyLibrary() != null) {
@@ -150,7 +149,7 @@ public abstract class HL7V2MessageValidator implements MessageValidator {
 				
 					
 				if (configuration != null) {					
-					if (newversion) {
+					
 						report = vp.validateNew(message,
 								v2TestContext.getConformanceProfile().getXml(),
 								valueSetLibraryIS,
@@ -161,16 +160,10 @@ public abstract class HL7V2MessageValidator implements MessageValidator {
 								conformanceProfielId,
 								Context.valueOf(contextType),
 								configuration);
-					}else {
-						//to be removed 
-						String valueSets = v2TestContext.getVocabularyLibrary().getXml();
-						ValueSetLibrary vsLib = valueSets != null ? getValueSetLibrary(IOUtils.toInputStream(valueSets, StandardCharsets.UTF_8)) : null;
-						report = vp.validate(message, v2TestContext.getConformanceProfile().getXml(), c, vsLib,
-								conformanceProfielId, Context.valueOf(contextType),configuration);
-					}													
+
 					HITStatsLogger.log(username, organization, operation, testContext.getDomain());					
 				}else {
-					if (newversion) {
+					
 						report = vp.validateNew(message,
 								v2TestContext.getConformanceProfile().getXml(),
 								valueSetLibraryIS,
@@ -181,13 +174,7 @@ public abstract class HL7V2MessageValidator implements MessageValidator {
 								conformanceProfielId,
 								Context.valueOf(contextType),
 								null);
-					}else {
-						//to be removed
-						String valueSets = v2TestContext.getVocabularyLibrary().getXml();
-						ValueSetLibrary vsLib = valueSets != null ? getValueSetLibrary(IOUtils.toInputStream(valueSets, StandardCharsets.UTF_8)) : null;
-						report = vp.validate(message, v2TestContext.getConformanceProfile().getXml(), c, vsLib,
-							conformanceProfielId, Context.valueOf(contextType));
-					}
+					
 					HITStatsLogger.log(username, organization, operation, testContext.getDomain());
 				}
 				
