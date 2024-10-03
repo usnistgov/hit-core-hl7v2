@@ -622,6 +622,7 @@ public class HL7V2ResourceLoaderImpl extends HL7V2ResourceLoader {
 				conformanceProfile.setJson(jsonConformanceProfileEnhanced(integrationProfile.getXml(), messageId.textValue(),
 						testContext.getConstraints() != null ? testContext.getConstraints().getXml() : null,
 						testContext.getAddditionalConstraints() != null	? testContext.getAddditionalConstraints().getXml() : null,
+						testContext.getVocabularyLibrary() != null ? testContext.getVocabularyLibrary().getXml() : null,
 						testContext.getValueSetBindings() != null ? testContext.getValueSetBindings().getXml() : null,
 						testContext.getCoConstraints() != null ? testContext.getCoConstraints().getXml() : null,
 						testContext.getSlicings() != null ? testContext.getSlicings().getXml() : null
@@ -646,10 +647,20 @@ public class HL7V2ResourceLoaderImpl extends HL7V2ResourceLoader {
 				throw new RuntimeException("Failed to parse integrationProfile at " + path);
 			}
 		} else {
+			
+			//no messageid in json. does/should this happen?
 			try {
 				Resource resource = this.getResource(path + PROFILE_FILE_PATTERN, rootPath);
 				String content = IOUtils.toString(resource.getInputStream());
-				List<UploadedProfileModel> list = packagingHandler.getUploadedProfiles(content);
+				
+				String vsContent = testContext.getVocabularyLibrary().getXml();
+				
+				String vsbContent= null;
+				if (testContext.getValueSetBindings() != null) {
+					vsbContent = testContext.getValueSetBindings().getXml();
+				} 
+				
+				List<UploadedProfileModel> list = packagingHandler.getUploadedProfiles(content,vsContent,vsbContent);
 				content = packagingHandler.removeUnusedAndDuplicateMessages(content,
 						new HashSet<UploadedProfileModel>(Arrays.asList(list.get(0))));
 				content = packagingHandler.changeProfileId(content);
@@ -662,6 +673,7 @@ public class HL7V2ResourceLoaderImpl extends HL7V2ResourceLoader {
 				conformanceProfile.setJson(jsonConformanceProfileEnhanced(content, messageId.textValue(),
 						testContext.getConstraints() != null ? testContext.getConstraints().getXml() : null,
 						testContext.getAddditionalConstraints() != null	? testContext.getAddditionalConstraints().getXml() : null,
+						testContext.getVocabularyLibrary() != null ? testContext.getVocabularyLibrary().getXml() : null,
 						testContext.getValueSetBindings() != null ? testContext.getValueSetBindings().getXml() : null,
 						testContext.getCoConstraints() != null ? testContext.getCoConstraints().getXml() : null,
 						testContext.getSlicings() != null ? testContext.getSlicings().getXml() : null
@@ -735,11 +747,13 @@ public class HL7V2ResourceLoaderImpl extends HL7V2ResourceLoader {
 				additionalConstraintsXml);
 	}
 
+	
+	
 	@Override
 	public ProfileModel parseEnhanced(String integrationProfileXml, String conformanceProfileId, String constraintsXml,
-			String additionalConstraintsXml, String valueSetBindings, String coConstraints,	String slicings) throws ProfileParserException {
+			String additionalConstraintsXml,String valueSets, String valueSetBindings, String coConstraints,	String slicings) throws ProfileParserException {
 		return profileParser.parseEnhanced(integrationProfileXml, conformanceProfileId, constraintsXml,	additionalConstraintsXml,
-				valueSetBindings, coConstraints, slicings);
+				valueSets, valueSetBindings, coConstraints, slicings);
 	}
 	
 	

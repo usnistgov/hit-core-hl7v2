@@ -38,6 +38,7 @@ import org.xml.sax.SAXException;
 
 import gov.nist.hit.core.domain.ProfileElement;
 import gov.nist.hit.core.domain.ProfileModel;
+import gov.nist.hit.core.domain.ValueSetLibrary;
 import gov.nist.hit.core.domain.constraints.ByID;
 import gov.nist.hit.core.domain.constraints.ByName;
 import gov.nist.hit.core.domain.constraints.ByNameOrByID;
@@ -49,9 +50,11 @@ import gov.nist.hit.core.domain.valuesetbindings.ValueSetBinding;
 import gov.nist.hit.core.domain.valuesetbindings.ValueSetBindings;
 import gov.nist.hit.core.hl7v2.domain.util.Util;
 import gov.nist.hit.core.service.ProfileParser;
+import gov.nist.hit.core.service.ValueSetLibrarySerializer;
 import gov.nist.hit.core.service.exception.ProfileParserException;
 import gov.nist.hit.core.service.impl.ConstraintsParserImpl;
 import gov.nist.hit.core.service.impl.ValueSetBindingsParserImpl;
+import gov.nist.hit.core.service.impl.ValueSetLibrarySerializerImpl;
 import hl7.v2.profile.Component;
 import hl7.v2.profile.Composite;
 import hl7.v2.profile.Datatype;
@@ -86,9 +89,12 @@ public abstract class HL7V2ProfileParser extends ProfileParser {
 	private Constraints conformanceStatements = null;
 	private Constraints predicates = null;
 	private ValueSetBindings valuesetBindings = null;
+	private ValueSetLibrary valueSetLibrary = null;
 	
 	ConstraintsParserImpl constraintsParser = new ConstraintsParserImpl();
 	ValueSetBindingsParserImpl valuesetBindingsParser = new ValueSetBindingsParserImpl();
+	ValueSetLibrarySerializer valueSetLibrarySerializer = new ValueSetLibrarySerializerImpl();
+	
 	
 	@Override
 	/**
@@ -111,14 +117,14 @@ public abstract class HL7V2ProfileParser extends ProfileParser {
 
 	@Override
 	public ProfileModel parseEnhanced(String integrationProfileXml, String conformanceProfileId,
-			String constraintsXml,String additionalConstraintsXml, String valueSetBindings, String coConstraints, String slicings)
+			String constraintsXml,String additionalConstraintsXml, String valueSetsXML, String valueSetBindings, String coConstraints, String slicings)
 			throws ProfileParserException {
 		try {
 			Profile p = null;
 			InputStream profileStream = IOUtils.toInputStream(integrationProfileXml);
 			p = XMLDeserializer.deserialize(profileStream).get();
 			Message m = p.getMessage(conformanceProfileId);
-			return parseEnhanced(m, constraintsXml, additionalConstraintsXml, valueSetBindings,coConstraints, slicings);
+			return parseEnhanced(m, constraintsXml, additionalConstraintsXml,valueSetsXML, valueSetBindings,coConstraints, slicings);
 		} catch (Exception e) {
 			e.printStackTrace();
 			throw new ProfileParserException(e.getMessage());
@@ -130,7 +136,7 @@ public abstract class HL7V2ProfileParser extends ProfileParser {
 	//TODO: add table information in segment and datatype 
 	@Override
 	public ProfileModel parseEnhanced(Object conformanceProfile, String constraintsXml,String additionalConstraintsXml,
-			String valueSetBindingsXml, String coConstraints,String slicings) throws ProfileParserException {
+			String valueSetsXml, String valueSetBindingsXml, String coConstraints,String slicings) throws ProfileParserException {
 		try {
 			if (!(conformanceProfile instanceof Message)) {
 				throw new IllegalArgumentException(
@@ -138,13 +144,18 @@ public abstract class HL7V2ProfileParser extends ProfileParser {
 			}
 			String c1Xml = constraintsXml;
 			String c2Xml = additionalConstraintsXml;
+			String vsXML = valueSetsXml;
 			String vsbXml = valueSetBindingsXml;
+			
 			
 			this.segmentsMap = new LinkedHashMap<String, ProfileElement>();
 			this.datatypesMap = new LinkedHashMap<String, ProfileElement>();
 			this.conformanceStatements = constraintsParser.confStatements(c1Xml);
 			this.predicates = constraintsParser.predicates(c1Xml);
-			this.valuesetBindings = valuesetBindingsParser.datatypes(vsbXml);
+			
+			this.valueSetLibrary = valueSetLibrarySerializer.toObject(vsXML);
+			this.valuesetBindings = valuesetBindingsParser.valueSetBindings(vsbXml,vsXML);
+					
 			
 			if (c2Xml != null) {
 				Constraints conformanceStatements2 = constraintsParser.confStatements(c2Xml);
@@ -288,6 +299,8 @@ public abstract class HL7V2ProfileParser extends ProfileParser {
 		message.setValuesetbindings(this.findValueSetBindings(this.valuesetBindings.getDatatypes(), 
 				model.getMessage().getId(),	model.getMessage().getName()));
 
+		model.addValueSetBindings(message.getValuesetbindings());
+		
 		scala.collection.immutable.List<SegRefOrGroup> children = m.structure();
 		if (children != null && !children.isEmpty()) {
 			Iterator<SegRefOrGroup> it = children.iterator();
@@ -295,8 +308,10 @@ public abstract class HL7V2ProfileParser extends ProfileParser {
 				processEnhanced(it.next(), message);
 			}
 		}
+									
 		model.setDatatypes(this.datatypesMap);
-		model.setSegments(this.segmentsMap);
+		model.setSegments(this.segmentsMap);		
+	
 		return message;
 		
 	}
@@ -483,6 +498,8 @@ public abstract class HL7V2ProfileParser extends ProfileParser {
 		element.setConformanceStatements(this.findConformanceStatements(this.conformanceStatements.getSegments(), s.id(), s.name()));
 		element.setValuesetbindings(this.findValueSetBindings(this.valuesetBindings.getSegments(), s.id(),	s.name()));
 
+		
+		model.addValueSetBindings(element.getValuesetbindings());
 		
 //		String tables = null;
 //		ArrayList<ValueSetBinding> vsbList = this.findValueSetBindings(this.valuesetBindings.getSegments(), s.id(),	s.name());
@@ -844,6 +861,7 @@ public abstract class HL7V2ProfileParser extends ProfileParser {
 			element.setConformanceStatements(this.findConformanceStatements(this.conformanceStatements.getDatatypes(), d.id(), d.name()));			
 			element.setValuesetbindings(this.findValueSetBindings(this.valuesetBindings.getDatatypes(), d.id(),	d.name()));
 
+			model.addValueSetBindings(element.getValuesetbindings());
 			
 			datatypesMap.put(d.id(), element);
 			if (d instanceof Composite) {
@@ -1061,14 +1079,14 @@ public abstract class HL7V2ProfileParser extends ProfileParser {
 			if (byNameOrByID instanceof gov.nist.hit.core.domain.valuesetbindings.ByID) {
 				gov.nist.hit.core.domain.valuesetbindings.ByID byID = (gov.nist.hit.core.domain.valuesetbindings.ByID) byNameOrByID;
 				if (byID.getByID().equals(id)) {
-					for (ValueSetBinding c : byID.getConformanceStatements()) {
+					for (ValueSetBinding c : byID.getValueSetBindings()) {
 						result.add(c);
 					}
 				}
 			} else if (byNameOrByID instanceof gov.nist.hit.core.domain.valuesetbindings.ByName) {
 				gov.nist.hit.core.domain.valuesetbindings.ByName byName = (gov.nist.hit.core.domain.valuesetbindings.ByName) byNameOrByID;
 				if (byName.getByName().equals(name)) {
-					for (ValueSetBinding c : byName.getConformanceStatements()) {
+					for (ValueSetBinding c : byName.getValueSetBindings()) {
 						result.add(c);
 					}
 				}

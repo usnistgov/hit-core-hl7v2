@@ -14,6 +14,8 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 import org.apache.commons.io.FileUtils;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,7 +37,9 @@ import gov.nist.hit.core.domain.Slicings;
 import gov.nist.hit.core.domain.TestScope;
 import gov.nist.hit.core.domain.TestingStage;
 import gov.nist.hit.core.domain.ValueSetBindings;
+import gov.nist.hit.core.domain.ValueSetDefinition;
 import gov.nist.hit.core.domain.VocabularyLibrary;
+import gov.nist.hit.core.hl7v2.domain.APIKey;
 import gov.nist.hit.core.hl7v2.domain.HL7V2TestContext;
 import gov.nist.hit.core.service.BundleHandler;
 import gov.nist.hit.core.service.ResourceLoader;
@@ -287,17 +291,21 @@ public class BundleHandlerImpl implements BundleHandler {
 			ConformanceProfile conformanceProfile = new ConformanceProfile();
 //			conformanceProfile.setJson(resourceLoader.jsonConformanceProfile(p.getXml(), messageId, c.getXml(), null));
 //TODO make sure this enhanced works
-			String vsbXML = null,ccXML = null,sliceXML = null;
+			
+			String vsXML = null, vsbXML = null,ccXML = null,sliceXML = null;
+			if(v != null) {
+				vsXML = v.getXml();
+			}
 			if (vsb != null) {
 				vsbXML = vsb.getXml();
 			}
 			if (cc != null) {
-				ccXML = vsb.getXml();
+				ccXML = cc.getXml();
 			}
 			if (slice != null) {
-				sliceXML = vsb.getXml();
+				sliceXML = slice.getXml();
 			}
-			conformanceProfile.setJson(resourceLoader.jsonConformanceProfileEnhanced(p.getXml(), messageId, c.getXml(), null,vsbXML,ccXML,sliceXML));
+			conformanceProfile.setJson(resourceLoader.jsonConformanceProfileEnhanced(p.getXml(), messageId, c.getXml(), null,vsXML,vsbXML,ccXML,sliceXML));
 
 
 			
@@ -340,6 +348,17 @@ public class BundleHandlerImpl implements BundleHandler {
 				}
 				message.setContent(tcO.findValue("exampleMessage").asText());
 			}
+			
+			Iterator<JsonNode> externalValueSetKeysIter = tcO.findValue("externalValueSetKeys").elements();
+			while (externalValueSetKeysIter.hasNext()) {
+				JsonNode exvs = externalValueSetKeysIter.next();
+				APIKey key = new APIKey();
+				key.setBindingIdentifier(exvs.get("bindingIdentifier").asText(""));
+				key.setBindingUrl(exvs.get("url").asText(""));
+				key.setBindingKey(exvs.get("key").asText(""));
+				testContext.getApikeys().add(key);
+			}
+						
 			// ---
 			cfti.setName(name);
 			cfti.setDescription(description);

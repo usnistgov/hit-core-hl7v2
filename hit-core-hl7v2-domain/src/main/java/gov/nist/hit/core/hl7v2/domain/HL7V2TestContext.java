@@ -1,13 +1,20 @@
 package gov.nist.hit.core.hl7v2.domain;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
 import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonView;
 
 import gov.nist.hit.core.domain.CoConstraints;
 import gov.nist.hit.core.domain.ConformanceProfile;
@@ -16,8 +23,11 @@ import gov.nist.hit.core.domain.Slicings;
 import gov.nist.hit.core.domain.TestContext;
 import gov.nist.hit.core.domain.ValueSetBindings;
 import gov.nist.hit.core.domain.VocabularyLibrary;
+import gov.nist.hit.core.domain.util.Views;
+import jakarta.persistence.Table;
 
 @Entity
+@Table(name="HL7V2TestContext")
 public class HL7V2TestContext extends TestContext {
 
 	private static final long serialVersionUID = 1L;
@@ -56,6 +66,14 @@ public class HL7V2TestContext extends TestContext {
 	@ManyToOne(cascade = { CascadeType.PERSIST, CascadeType.MERGE })
 	@JoinColumn(nullable = true, insertable = true, updatable = true)
 	protected ValueSetBindings valueSetBindings;
+	
+	@JsonIgnore
+    @OneToMany(orphanRemoval = true, fetch = FetchType.EAGER, cascade = {CascadeType.ALL})
+	@JoinTable(name = "hl7v2tc_apikey",
+	      joinColumns = {@JoinColumn(name = "hl7v2tc_id", referencedColumnName = "id")},
+	      inverseJoinColumns = {@JoinColumn(name = "apikey_id", referencedColumnName = "id")})
+    @JsonView(Views.NoData.class)
+    private Set<APIKey> apikeys = new HashSet<APIKey>();
 
 	public HL7V2TestContext() {
 		this.format = "hl7v2";
@@ -125,4 +143,13 @@ public class HL7V2TestContext extends TestContext {
 		this.dqa = dqa;
 	}
 
+	public Set<APIKey> getApikeys() {
+		return apikeys;
+	}
+
+	public void setApikeys(Set<APIKey> apikeys) {
+		this.apikeys = apikeys;
+	}
+
+	
 }

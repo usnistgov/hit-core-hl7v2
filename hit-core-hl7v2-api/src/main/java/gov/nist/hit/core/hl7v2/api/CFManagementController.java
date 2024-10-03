@@ -19,6 +19,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import javax.servlet.ServletRequest;
@@ -48,14 +49,20 @@ import gov.nist.hit.core.domain.CFTestPlan;
 import gov.nist.hit.core.domain.CFTestStep;
 import gov.nist.hit.core.domain.CFTestStepGroup;
 import gov.nist.hit.core.domain.Message;
+import gov.nist.hit.core.domain.ProfileModel;
 import gov.nist.hit.core.domain.ResourceType;
 import gov.nist.hit.core.domain.ResourceUploadAction;
 import gov.nist.hit.core.domain.ResourceUploadResult;
 import gov.nist.hit.core.domain.ResourceUploadStatus;
-import gov.nist.hit.core.domain.TestPlan;
 import gov.nist.hit.core.domain.TestScope;
-import gov.nist.hit.core.domain.TestingStage;
 import gov.nist.hit.core.domain.UploadedProfileModel;
+import gov.nist.hit.core.domain.ValueSetDefinition;
+import gov.nist.hit.core.domain.valuesetbindings.Binding;
+import gov.nist.hit.core.domain.valuesetbindings.ValueSetBinding;
+import gov.nist.hit.core.hl7v2.domain.HL7V2TestContext;
+import gov.nist.hit.core.hl7v2.service.HL7V2ProfileParser;
+import gov.nist.hit.core.hl7v2.service.impl.HL7V2ProfileParserImpl;
+import gov.nist.hit.core.hl7v2.service.impl.PackagingHandlerImpl;
 import gov.nist.hit.core.service.AccountService;
 import gov.nist.hit.core.service.AppInfoService;
 import gov.nist.hit.core.service.CFTestPlanService;
@@ -65,6 +72,7 @@ import gov.nist.hit.core.service.DomainService;
 import gov.nist.hit.core.service.UserIdService;
 import gov.nist.hit.core.service.UserService;
 import gov.nist.hit.core.service.exception.NoUserFoundException;
+import gov.nist.hit.core.service.exception.ProfileParserException;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiParam;
 
@@ -117,6 +125,9 @@ public class CFManagementController {
 
   @Value("${mail.tool}")
   private String TOOL_NAME;
+  
+  @Autowired
+  private PackagingHandlerImpl packagingHandlerImpl;
 
   private void checkManagementSupport() throws Exception {
     if (!appInfoService.get().isCfManagementSupported()) {
@@ -823,6 +834,38 @@ public class CFManagementController {
             model.setExampleMessage(message.getContent());
           }
         }
+            
+        
+        
+        HL7V2TestContext tc = (HL7V2TestContext)step.getTestContext();       	           
+		List<ValueSetDefinition> listOfExternalVSD =   packagingHandlerImpl.getExternalValueSets(tc.getVocabularyLibrary().getXml());
+		List<ValueSetDefinition> externalVS = new ArrayList<ValueSetDefinition>();
+		ProfileModel profileModel;
+		
+		try {
+			HL7V2ProfileParser profileParser = new HL7V2ProfileParserImpl();
+			profileModel = profileParser.parseEnhanced(tc.getConformanceProfile().getXml(), tc.getConformanceProfile().getSourceId(), null,
+					null,tc.getVocabularyLibrary().getXml(),tc.getValueSetBindings().getXml(), null, null);
+			
+			for (ValueSetBinding vsb  : profileModel.getValueSetBinding()) {
+				
+				for (Binding binding  : vsb.getBindingList()) {
+						Optional<ValueSetDefinition> matchedObject = listOfExternalVSD.stream()
+								  .filter(item -> item.getBindingIdentifier().equals(binding.getBindingIdentifier()))
+								  .findFirst();
+						if(matchedObject.isPresent()) {
+							externalVS.add(matchedObject.get());
+						}				
+				}
+			}
+			if (tc != null && tc.getApikeys().size() >0) {
+		    	   model.setExternalValueSets(externalVS);
+		    }
+		}catch (ProfileParserException e) {
+			e.printStackTrace();
+		}
+		
+       
         models.add(model);
       }
       return models;

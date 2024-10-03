@@ -21,7 +21,7 @@ import java.util.Map;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.client.HttpClients;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import gov.nist.auth.hit.core.domain.Account;
@@ -130,8 +130,7 @@ public abstract class HL7V2MessageValidator implements MessageValidator {
 					}				
 				}
 				
-				
-			
+						
 				
 				boolean newversion = true;		
 				
@@ -150,8 +149,8 @@ public abstract class HL7V2MessageValidator implements MessageValidator {
 				}
 				
 				
-				CloseableHttpClient httpClient = HttpClientBuilder.create().build();
-				
+				//CloseableHttpClient httpClient = HttpClients.createDefault();// HttpClientBuilder.create().build();
+				CloseableHttpClient httpClient = HttpClients.createDefault();
 				
 					
 				if (configuration != null) {					

@@ -8,7 +8,7 @@ import gov.nist.hit.core.domain.UploadedProfileModel;
 
 public interface PackagingHandler {
 
-	public List<UploadedProfileModel> getUploadedProfiles(String xml);
+	public List<UploadedProfileModel> getUploadedProfiles(String profileXML, String valueSetXML, String valueSetBindingsXML);
 
 	public String removeUnusedAndDuplicateMessages(String content, Set<UploadedProfileModel> presentMessages);
 

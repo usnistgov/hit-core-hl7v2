@@ -10,6 +10,7 @@ import java.io.StringWriter;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -33,9 +34,17 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
+import gov.nist.hit.core.domain.ExtensibilityType;
+import gov.nist.hit.core.domain.ProfileModel;
+import gov.nist.hit.core.domain.StabilityType;
 import gov.nist.hit.core.domain.UploadedProfileModel;
+import gov.nist.hit.core.domain.ValueSetDefinition;
+import gov.nist.hit.core.domain.valuesetbindings.Binding;
+import gov.nist.hit.core.domain.valuesetbindings.ValueSetBinding;
+import gov.nist.hit.core.hl7v2.service.HL7V2ProfileParser;
 import gov.nist.hit.core.hl7v2.service.PackagingHandler;
 import gov.nist.hit.core.service.CachedRepository;
+import gov.nist.hit.core.service.exception.ProfileParserException;
 
 @Service
 public class PackagingHandlerImpl implements PackagingHandler {
@@ -44,9 +53,13 @@ public class PackagingHandlerImpl implements PackagingHandler {
 	protected CachedRepository cachedRepository;
 
 	@Override
-	public List<UploadedProfileModel> getUploadedProfiles(String xml) {
-		Document doc = this.toDoc(xml);
-		NodeList nodes = doc.getElementsByTagName("Message");
+	public List<UploadedProfileModel> getUploadedProfiles(String profileXML, String valueSetXML, String valueSetBindingsXML) {
+		
+		
+		List<ValueSetDefinition> listOfExternalVSD = this.getExternalValueSets(valueSetXML);
+		
+		Document profileDoc = this.toDoc(profileXML);
+		NodeList nodes = profileDoc.getElementsByTagName("Message");
 		List<UploadedProfileModel> list = new ArrayList<UploadedProfileModel>();
 		for (int i = 0; i < nodes.getLength(); i++) {
 			Element elmIntegrationProfile = (Element) nodes.item(i);
@@ -59,7 +72,40 @@ public class PackagingHandlerImpl implements PackagingHandler {
 			upm.setStructID(elmIntegrationProfile.getAttribute("StructID"));
 			upm.setIdentifier(elmIntegrationProfile.getAttribute("Identifier"));
 			upm.setDescription(elmIntegrationProfile.getAttribute("Description"));
-
+			
+						
+			
+			HL7V2ProfileParser profileParser = new HL7V2ProfileParserImpl();
+			ProfileModel profileModel;
+			try {
+				profileModel = profileParser.parseEnhanced(profileXML, elmIntegrationProfile.getAttribute("ID"), null,
+						null,valueSetXML,valueSetBindingsXML, null, null);
+				
+				List<ValueSetDefinition> externalVS = new ArrayList<ValueSetDefinition>();
+				for (ValueSetBinding vsb  : profileModel.getValueSetBinding()) {
+					
+					for (Binding binding  : vsb.getBindingList()) {
+							Optional<ValueSetDefinition> matchedObject = listOfExternalVSD.stream()
+									  .filter(item -> item.getBindingIdentifier().equals(binding.getBindingIdentifier()))
+									  .findFirst();
+							if(matchedObject.isPresent()) {
+								externalVS.add(matchedObject.get());
+							}				
+					}
+				}
+				upm.setExternalValueSets(externalVS);
+				
+			} catch (ProfileParserException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+			
+//			check if ex vs are present.
+//			upm.setExternalValueSets(listOfExternalVS);
+			// get list of external value sets.
+			
+			
 			if (cachedRepository.getCachedProfiles().containsKey(elmIntegrationProfile.getAttribute("ID"))) {
 				// remove them from cache or it will trigger an error.
 				cachedRepository.getCachedProfiles().remove(elmIntegrationProfile.getAttribute("ID"));
@@ -69,7 +115,32 @@ public class PackagingHandlerImpl implements PackagingHandler {
 			}
 			list.add(upm);
 		}
+		
+		
 		return list;
+	}
+	
+	
+	public List<ValueSetDefinition> getExternalValueSets(String xml){
+		Document valueSetDoc = this.toDoc(xml);
+		NodeList extValSetDefNodes = valueSetDoc.getElementsByTagName("ExternalValueSetDefinitions");
+		List<ValueSetDefinition> listOfExternalVSD = new ArrayList<ValueSetDefinition>();
+		for (int i = 0; i < extValSetDefNodes.getLength(); i++) {
+			
+			Element elmIntegrationProfile = (Element) extValSetDefNodes.item(i);
+			NodeList valSetDefNodes = elmIntegrationProfile.getElementsByTagName("ValueSetDefinition");
+			for (int j = 0; j < valSetDefNodes.getLength(); j++) {
+				Element elm = (Element) valSetDefNodes.item(j);
+				ValueSetDefinition vsb = new ValueSetDefinition();
+				vsb.setBindingIdentifier(elm.getAttribute("BindingIdentifier"));
+				vsb.setName(elm.getAttribute("Name"));
+				vsb.setStability(StabilityType.fromValue(elm.getAttribute("Stability")));
+				vsb.setExtensibility(ExtensibilityType.fromValue(elm.getAttribute("Extensibility")));
+				vsb.setUrl(elm.getAttribute("URL"));			
+				listOfExternalVSD.add(vsb);
+			}
+		}
+		return listOfExternalVSD;
 	}
 
 	@Override

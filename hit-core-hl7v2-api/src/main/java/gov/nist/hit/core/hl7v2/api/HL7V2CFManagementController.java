@@ -76,6 +76,7 @@ import gov.nist.hit.core.domain.TestContext;
 import gov.nist.hit.core.domain.TestScope;
 import gov.nist.hit.core.domain.UploadStatus;
 import gov.nist.hit.core.domain.UploadedProfileModel;
+import gov.nist.hit.core.domain.ValueSetDefinition;
 import gov.nist.hit.core.hl7v2.service.FileValidationHandler;
 import gov.nist.hit.core.hl7v2.service.PackagingHandler;
 import gov.nist.hit.core.hl7v2.service.impl.FileValidationHandlerImpl.InvalidFileTypeException;
@@ -279,9 +280,10 @@ public class HL7V2CFManagementController {
 			FileUtils.writeStringToFile(profileFile, content);
 
 		
-			List<UploadedProfileModel> list = packagingHandler.getUploadedProfiles(content);
+			//TODO get profile list when validation is done.
+//			List<UploadedProfileModel> list = packagingHandler.getUploadedProfiles(content);
 			resultMap.put("success", true);
-			resultMap.put("profiles", list);
+//			resultMap.put("profiles", list);
 					
 
 			return resultMap;
@@ -696,11 +698,13 @@ public class HL7V2CFManagementController {
         throw new NotValidToken("The provided token is not valid for this account.");
 
       String profileContent = bundleHandler.getProfileContentFromZipDirectory(directory);
+      String valueSetContent = bundleHandler.getValueSetContentFromZipDirectory(directory);
+      String valueSetBindingContent = bundleHandler.getValueSetBindingsContentFromZipDirectory(directory);
 
       if (profileContent == null)
         throw new MessageUploadException("Could not retrieve the profile list");
 
-      List<UploadedProfileModel> list = packagingHandler.getUploadedProfiles(profileContent);
+      List<UploadedProfileModel> list = packagingHandler.getUploadedProfiles(profileContent,valueSetContent,valueSetBindingContent);
       resultMap.put("success", true);
       resultMap.put("profiles", list);
 
@@ -788,6 +792,7 @@ public class HL7V2CFManagementController {
 
       testPlan.setName(wrapper.getTestcasename());
       testPlan.setDescription(wrapper.getTestcasedescription());
+      //creates the TestCases.json in the token folder 
       createTestStepFiles(testPlan.getDomain(), testSteps, wrapper, auth);
       if (wrapper.getToken() != null) {
         // Use files to save to database
@@ -912,6 +917,15 @@ public class HL7V2CFManagementController {
 	          if (upm.getExampleMessage() != null) {
 	            ts.put("exampleMessage", upm.getExampleMessage());
 	          }
+	          JSONArray externalVSKeysArray = new JSONArray();
+	          for ( ValueSetDefinition exvs : upm.getExternalVS()) {
+	        	  JSONObject ex = new JSONObject();
+	        	  ex.put("bindingIdentifier", exvs.getBindingIdentifier());
+	        	  ex.put("url",exvs.getUrl());
+	        	  ex.put("key",exvs.getApiKey());
+	        	  externalVSKeysArray.put(ex);
+	          }	          
+	          ts.put("externalValueSetKeys",externalVSKeysArray);
 	          testStepArray.put(ts);
 	        }
 	        testCaseJson.put("testCases", testStepArray);
