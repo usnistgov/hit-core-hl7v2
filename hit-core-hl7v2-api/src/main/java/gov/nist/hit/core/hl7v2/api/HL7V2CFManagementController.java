@@ -77,6 +77,8 @@ import gov.nist.hit.core.domain.TestScope;
 import gov.nist.hit.core.domain.UploadStatus;
 import gov.nist.hit.core.domain.UploadedProfileModel;
 import gov.nist.hit.core.domain.ValueSetDefinition;
+import gov.nist.hit.core.hl7v2.domain.APIKey;
+import gov.nist.hit.core.hl7v2.domain.HL7V2TestContext;
 import gov.nist.hit.core.hl7v2.service.FileValidationHandler;
 import gov.nist.hit.core.hl7v2.service.PackagingHandler;
 import gov.nist.hit.core.hl7v2.service.impl.FileValidationHandlerImpl.InvalidFileTypeException;
@@ -881,6 +883,29 @@ public class HL7V2CFManagementController {
 	              context.setMessage(message);
 	            }
 	            message.setContent(model.getExampleMessage());
+	          }
+	          
+	          //deal with external vs and api keys
+	          if (model.getExternalVS() != null) {
+	        	  for(ValueSetDefinition vsd : model.getExternalVS()) {
+	        		  if (vsd.getApiKey() != null) {
+	        			  if (!vsd.getApiKey().equals("***")) {
+		        			  boolean exists = false;
+			        		  HL7V2TestContext tc = (HL7V2TestContext) found.getTestContext();	        		 	        		  
+			        		  for(APIKey key: tc.getApikeys()) {
+			        			  if (vsd.getBindingIdentifier().equals(key.getBindingIdentifier())) {
+			        				  //we update
+			        				  exists = true;
+			        				  key.setBindingKey(vsd.getApiKey());
+			        			  }
+			        		  }
+			        		  if(!exists) {
+			        			  APIKey newKey = new APIKey(vsd.getBindingIdentifier(), vsd.getUrl(), vsd.getApiKey());
+			        			  tc.getApikeys().add(newKey);
+			        		  }	   
+	        			  }
+	        		  }	        			  	         		
+	        	  }
 	          }
 	        }
 	      }

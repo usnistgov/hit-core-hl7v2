@@ -353,9 +353,15 @@ public class BundleHandlerImpl implements BundleHandler {
 			while (externalValueSetKeysIter.hasNext()) {
 				JsonNode exvs = externalValueSetKeysIter.next();
 				APIKey key = new APIKey();
-				key.setBindingIdentifier(exvs.get("bindingIdentifier").asText(""));
-				key.setBindingUrl(exvs.get("url").asText(""));
-				key.setBindingKey(exvs.get("key").asText(""));
+				if(exvs.get("bindingIdentifier") != null) {
+					key.setBindingIdentifier(exvs.get("bindingIdentifier").asText(""));
+				}
+				if(exvs.get("url") != null) {
+					key.setBindingUrl(exvs.get("url").asText(""));
+				}
+				if(exvs.get("key") != null) {
+					key.setBindingKey(exvs.get("key").asText(""));
+				}							
 				testContext.getApikeys().add(key);
 			}
 						

@@ -59,6 +59,7 @@ import gov.nist.hit.core.domain.UploadedProfileModel;
 import gov.nist.hit.core.domain.ValueSetDefinition;
 import gov.nist.hit.core.domain.valuesetbindings.Binding;
 import gov.nist.hit.core.domain.valuesetbindings.ValueSetBinding;
+import gov.nist.hit.core.hl7v2.domain.APIKey;
 import gov.nist.hit.core.hl7v2.domain.HL7V2TestContext;
 import gov.nist.hit.core.hl7v2.service.HL7V2ProfileParser;
 import gov.nist.hit.core.hl7v2.service.impl.HL7V2ProfileParserImpl;
@@ -841,29 +842,39 @@ public class CFManagementController {
 		List<ValueSetDefinition> listOfExternalVSD =   packagingHandlerImpl.getExternalValueSets(tc.getVocabularyLibrary().getXml());
 		List<ValueSetDefinition> externalVS = new ArrayList<ValueSetDefinition>();
 		ProfileModel profileModel;
-		
-		try {
-			HL7V2ProfileParser profileParser = new HL7V2ProfileParserImpl();
-			profileModel = profileParser.parseEnhanced(tc.getConformanceProfile().getXml(), tc.getConformanceProfile().getSourceId(), null,
-					null,tc.getVocabularyLibrary().getXml(),tc.getValueSetBindings().getXml(), null, null);
-			
-			for (ValueSetBinding vsb  : profileModel.getValueSetBinding()) {
+		if (listOfExternalVSD.size()> 0 && tc.getValueSetBindings()!= null) {
+			try {
+				HL7V2ProfileParser profileParser = new HL7V2ProfileParserImpl();
+				profileModel = profileParser.parseEnhanced(tc.getConformanceProfile().getXml(), tc.getConformanceProfile().getSourceId()+"", null,
+						null,tc.getVocabularyLibrary().getXml(),tc.getValueSetBindings().getXml(), null, null);
 				
-				for (Binding binding  : vsb.getBindingList()) {
-						Optional<ValueSetDefinition> matchedObject = listOfExternalVSD.stream()
-								  .filter(item -> item.getBindingIdentifier().equals(binding.getBindingIdentifier()))
-								  .findFirst();
-						if(matchedObject.isPresent()) {
-							externalVS.add(matchedObject.get());
-						}				
+				for (ValueSetBinding vsb  : profileModel.getValueSetBinding()) {
+					
+					for (Binding binding  : vsb.getBindingList()) {
+							Optional<ValueSetDefinition> matchedObject = listOfExternalVSD.stream()
+									  .filter(item -> item.getBindingIdentifier().equals(binding.getBindingIdentifier()))
+									  .findFirst();
+							if(matchedObject.isPresent()) {
+								
+								ValueSetDefinition vsd = matchedObject.get();
+								for(APIKey key : tc.getApikeys()) {
+									if (vsd.getBindingIdentifier().equals(key.getBindingIdentifier()) && key.getBindingKey() != null && !key.getBindingKey().isEmpty()) {
+										//this valueset has a key defined.
+										vsd.setApiKey("***");
+									}
+								}								
+								externalVS.add(vsd);
+							}				
+					}
 				}
+				if (tc != null && tc.getApikeys().size() >0) {
+			    	   model.setExternalValueSets(externalVS);
+			    }
+			}catch (ProfileParserException e) {
+				e.printStackTrace();
 			}
-			if (tc != null && tc.getApikeys().size() >0) {
-		    	   model.setExternalValueSets(externalVS);
-		    }
-		}catch (ProfileParserException e) {
-			e.printStackTrace();
 		}
+		
 		
        
         models.add(model);
