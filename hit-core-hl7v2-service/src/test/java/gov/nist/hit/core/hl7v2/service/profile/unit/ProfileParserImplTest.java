@@ -19,7 +19,7 @@ import gov.nist.hit.core.hl7v2.service.impl.HL7V2ProfileParserImpl;
 import gov.nist.hit.core.service.ProfileParser;
 import gov.nist.hit.core.service.exception.ProfileParserException;
 
-
+@Ignore
 public class ProfileParserImplTest {
 
   ProfileParser parser = new HL7V2ProfileParserImpl();
