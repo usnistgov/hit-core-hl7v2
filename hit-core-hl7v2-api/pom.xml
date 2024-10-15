@@ -7,7 +7,7 @@
 	<parent>
 		<groupId>gov.nist.hit.core.hl7v2</groupId>
 		<artifactId>hit-core-hl7v2</artifactId>
-		<version>1.0.25-SNAPSHOT</version>
+		<version>1.0.25.ex-SNAPSHOT</version>
 	</parent>
 
 	<build>
@@ -54,7 +54,7 @@
 		<dependency>
 			<groupId>gov.nist.hit.core.hl7v2</groupId>
 			<artifactId>hit-core-hl7v2-service</artifactId>
-						<version>${project.version}</version>
+			<version>${project.version}</version>
 		</dependency>
 
 		<dependency>
