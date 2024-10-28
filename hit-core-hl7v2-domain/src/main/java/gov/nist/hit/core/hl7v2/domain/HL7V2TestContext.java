@@ -24,10 +24,8 @@ import gov.nist.hit.core.domain.TestContext;
 import gov.nist.hit.core.domain.ValueSetBindings;
 import gov.nist.hit.core.domain.VocabularyLibrary;
 import gov.nist.hit.core.domain.util.Views;
-import jakarta.persistence.Table;
 
 @Entity
-@Table(name="HL7V2TestContext")
 public class HL7V2TestContext extends TestContext {
 
 	private static final long serialVersionUID = 1L;

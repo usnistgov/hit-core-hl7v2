@@ -10,7 +10,6 @@ import javax.persistence.Id;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name="APIKey")
 public class APIKey implements Serializable {
 	
 	private static final long serialVersionUID = 3506426958342462919L;
