@@ -14,7 +14,7 @@
 	</modules>
 
 	<properties>
-		<hitcore.version>1.0.35.IZTOOLNIST</hitcore.version>
+		<hitcore.version>1.0.36.IZTOOLNIST-SNAPSHOT</hitcore.version>
 		<additionalparam>-Xdoclint:none</additionalparam>
 		<java.version>1.8</java.version>
 		<resourcesValidation.version>1.0.1</resourcesValidation.version>

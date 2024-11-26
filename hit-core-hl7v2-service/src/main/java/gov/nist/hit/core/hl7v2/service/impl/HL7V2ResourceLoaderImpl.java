@@ -380,11 +380,15 @@ public class HL7V2ResourceLoaderImpl extends HL7V2ResourceLoader {
 				ConformanceProfile conformanceProfile = new ConformanceProfile();
 				IntegrationProfile integrationProfile = getIntegrationProfile(messageId.textValue());
 				
+//				conformanceProfile.setJson(jsonConformanceProfile(integrationProfile.getXml(), messageId.textValue(),
+//						testContext.getConstraints() != null ? testContext.getConstraints().getXml() : null,
+//						testContext.getAddditionalConstraints() != null
+//								? testContext.getAddditionalConstraints().getXml() : null));
+				
+				//don't put additional constraints in profile json
 				conformanceProfile.setJson(jsonConformanceProfile(integrationProfile.getXml(), messageId.textValue(),
-						testContext.getConstraints() != null ? testContext.getConstraints().getXml() : null,
-						testContext.getAddditionalConstraints() != null
-								? testContext.getAddditionalConstraints().getXml() : null));
-			
+						testContext.getConstraints() != null ? testContext.getConstraints().getXml() : null,null));
+				
 				conformanceProfile
 						.setXml(getConformanceProfileContent(integrationProfile.getXml(), messageId.textValue()));
 				
@@ -412,9 +416,14 @@ public class HL7V2ResourceLoaderImpl extends HL7V2ResourceLoader {
 				content = packagingHandler.changeProfileId(content);
 				String messageID = getMessageId(content);
 				ConformanceProfile conformanceProfile = new ConformanceProfile();
+//				conformanceProfile.setJson(
+//						jsonConformanceProfile(content, messageID, null, testContext.getAddditionalConstraints() != null
+//								? testContext.getAddditionalConstraints().getXml() : null));
+				
+				//don't put additional constraints in profile json
 				conformanceProfile.setJson(
-						jsonConformanceProfile(content, messageID, null, testContext.getAddditionalConstraints() != null
-								? testContext.getAddditionalConstraints().getXml() : null));
+						jsonConformanceProfile(content, messageID, null, null));
+				
 				conformanceProfile.setXml(getConformanceProfileContent(content, messageID));
 				conformanceProfile.setDomain(domain);
 				conformanceProfile.setScope(scope);
