@@ -148,6 +148,24 @@ public class HL7V2TestContext extends TestContext {
 	public void setApikeys(Set<APIKey> apikeys) {
 		this.apikeys = apikeys;
 	}
+	
+	public String getKeyFromIdentifier(String binding) {
+		for(APIKey api: apikeys) {
+			if(api.getBindingIdentifier().equals(binding) ) {
+				return api.getBindingKey();
+			}
+		}
+		return null;
+	}
+	
+	public String getKeyFromUrl(String url) {
+		for(APIKey api: apikeys) {
+			if(api.getBindingUrl().equals(url) ) {
+				return api.getBindingKey();
+			}
+		}
+		return null;
+	}
 
 	
 }

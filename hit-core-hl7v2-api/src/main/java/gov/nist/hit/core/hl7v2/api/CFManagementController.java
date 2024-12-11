@@ -844,9 +844,10 @@ public class CFManagementController {
 		ProfileModel profileModel;
 		if (listOfExternalVSD.size()> 0 && tc.getValueSetBindings()!= null) {
 			try {
+				//maybe not parse the whole thing? tbd
 				HL7V2ProfileParser profileParser = new HL7V2ProfileParserImpl();
 				profileModel = profileParser.parseEnhanced(tc.getConformanceProfile().getXml(), tc.getConformanceProfile().getSourceId()+"", null,
-						null,tc.getVocabularyLibrary().getXml(),tc.getValueSetBindings().getXml(), null, null);
+						null,tc.getVocabularyLibrary().getXml(),tc.getValueSetBindings().getXml(), tc.getCoConstraints().getXml(), tc.getSlicings().getXml());
 				
 				for (ValueSetBinding vsb  : profileModel.getValueSetBinding()) {
 					

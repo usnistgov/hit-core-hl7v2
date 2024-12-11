@@ -11,6 +11,7 @@
  */
 package gov.nist.hit.core.hl7v2.service;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
@@ -20,8 +21,16 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.http.HttpException;
+import org.apache.http.HttpRequest;
+import org.apache.http.HttpRequestInterceptor;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.protocol.HttpContext;
+import org.apache.http.ssl.SSLContextBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import gov.nist.auth.hit.core.domain.Account;
@@ -44,6 +53,7 @@ import hl7.v2.validation.content.ConformanceContext;
 import hl7.v2.validation.content.DefaultConformanceContext;
 import hl7.v2.validation.vs.ValueSetLibrary;
 import hl7.v2.validation.vs.ValueSetLibraryImpl;
+import hl7.v2.validation.vs.external.client.ExternalValueSetClient;
 
 public abstract class HL7V2MessageValidator implements MessageValidator {
 
@@ -84,7 +94,7 @@ public abstract class HL7V2MessageValidator implements MessageValidator {
 		try {
 			if (testContext instanceof HL7V2TestContext) {
 				HL7V2TestContext v2TestContext = (HL7V2TestContext) testContext;
-				EnhancedReport report;
+				EnhancedReport report = null;
 				String contextType = command.getContextType();
 				String message = getMessageContent(command);
 				String conformanceProfielId = v2TestContext.getConformanceProfile().getSourceId();
@@ -132,7 +142,7 @@ public abstract class HL7V2MessageValidator implements MessageValidator {
 				
 						
 				
-				boolean newversion = true;		
+//				boolean newversion = true;		
 				
 				InputStream valueSetLibraryIS = null ,valueSetBindingsIS = null,coConstraintsIS= null,slicingsIS = null;
 				if (v2TestContext.getVocabularyLibrary() != null) {
@@ -150,11 +160,28 @@ public abstract class HL7V2MessageValidator implements MessageValidator {
 				
 				
 				//CloseableHttpClient httpClient = HttpClients.createDefault();// HttpClientBuilder.create().build();
-				CloseableHttpClient httpClient = HttpClients.createDefault();
+//				CloseableHttpClient httpClient = HttpClients.createDefault();
+				
+				v2TestContext.getApikeys();
+				
+				SSLContextBuilder builder = new SSLContextBuilder();
+				RequestConfig requestConfig = RequestConfig.custom().setConnectionRequestTimeout(2 * 1000).setConnectTimeout(2 * 1000)
+						.setSocketTimeout(2 * 1000).build();
+				SSLConnectionSocketFactory socketFactory = new SSLConnectionSocketFactory(builder.build(), NoopHostnameVerifier.INSTANCE);
+
+				CloseableHttpClient httpClient = HttpClients.custom().setDefaultRequestConfig(requestConfig).disableCookieManagement()
+						.setSSLSocketFactory(socketFactory).addInterceptorFirst(new HttpRequestInterceptor() {
+							@Override
+							public void process(HttpRequest request, HttpContext context) throws HttpException, IOException {
+								context.getAttribute(ExternalValueSetClient.HTTP_CONTEXT_VS_BINDING_IDENTIFIER).toString();
+								request.addHeader("X-API-KEY", v2TestContext
+										.getKeyFromIdentifier(context.getAttribute(ExternalValueSetClient.HTTP_CONTEXT_VS_BINDING_IDENTIFIER).toString()));
+							}
+						}).build();
 				
 					
 				if (configuration != null) {					
-					if (newversion) {
+//					if (newversion) {
 						report = vp.validateNew(message,
 								v2TestContext.getConformanceProfile().getXml(),
 								valueSetLibraryIS,
@@ -165,16 +192,16 @@ public abstract class HL7V2MessageValidator implements MessageValidator {
 								conformanceProfielId,
 								Context.valueOf(contextType),
 								configuration,httpClient);
-					}else {
+//					}else {
 						//to be removed 
-						String valueSets = v2TestContext.getVocabularyLibrary().getXml();
-						ValueSetLibrary vsLib = valueSets != null ? getValueSetLibrary(IOUtils.toInputStream(valueSets, StandardCharsets.UTF_8)) : null;
-						report = vp.validate(message, v2TestContext.getConformanceProfile().getXml(), c, vsLib,
-								conformanceProfielId, Context.valueOf(contextType),configuration);
-					}													
+//						String valueSets = v2TestContext.getVocabularyLibrary().getXml();
+//						ValueSetLibrary vsLib = valueSets != null ? getValueSetLibrary(IOUtils.toInputStream(valueSets, StandardCharsets.UTF_8)) : null;
+//						report = vp.validate(message, v2TestContext.getConformanceProfile().getXml(), c, vsLib,
+//								conformanceProfielId, Context.valueOf(contextType),configuration);
+//					}													
 					HITStatsLogger.log(username, organization, operation, testContext.getDomain());					
 				}else {
-					if (newversion) {
+//					if (newversion) {
 						report = vp.validateNew(message,
 								v2TestContext.getConformanceProfile().getXml(),
 								valueSetLibraryIS,
@@ -185,13 +212,13 @@ public abstract class HL7V2MessageValidator implements MessageValidator {
 								conformanceProfielId,
 								Context.valueOf(contextType),
 								null,httpClient);
-					}else {
+//					}else {
 						//to be removed
-						String valueSets = v2TestContext.getVocabularyLibrary().getXml();
-						ValueSetLibrary vsLib = valueSets != null ? getValueSetLibrary(IOUtils.toInputStream(valueSets, StandardCharsets.UTF_8)) : null;
-						report = vp.validate(message, v2TestContext.getConformanceProfile().getXml(), c, vsLib,
-							conformanceProfielId, Context.valueOf(contextType));
-					}
+//						String valueSets = v2TestContext.getVocabularyLibrary().getXml();
+//						ValueSetLibrary vsLib = valueSets != null ? getValueSetLibrary(IOUtils.toInputStream(valueSets, StandardCharsets.UTF_8)) : null;
+//						report = vp.validate(message, v2TestContext.getConformanceProfile().getXml(), c, vsLib,
+//							conformanceProfielId, Context.valueOf(contextType));
+//					}
 					HITStatsLogger.log(username, organization, operation, testContext.getDomain());
 				}
 				

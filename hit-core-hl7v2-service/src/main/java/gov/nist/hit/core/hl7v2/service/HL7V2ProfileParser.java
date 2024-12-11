@@ -29,10 +29,8 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.XPathExpressionException;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
@@ -46,6 +44,8 @@ import gov.nist.hit.core.domain.constraints.ConformanceStatement;
 import gov.nist.hit.core.domain.constraints.Constraints;
 import gov.nist.hit.core.domain.constraints.Context;
 import gov.nist.hit.core.domain.constraints.Predicate;
+import gov.nist.hit.core.domain.singlecodebindings.SingleCodeBinding;
+import gov.nist.hit.core.domain.singlecodebindings.SingleCodeBindings;
 import gov.nist.hit.core.domain.valuesetbindings.ValueSetBinding;
 import gov.nist.hit.core.domain.valuesetbindings.ValueSetBindings;
 import gov.nist.hit.core.hl7v2.domain.util.Util;
@@ -53,6 +53,7 @@ import gov.nist.hit.core.service.ProfileParser;
 import gov.nist.hit.core.service.ValueSetLibrarySerializer;
 import gov.nist.hit.core.service.exception.ProfileParserException;
 import gov.nist.hit.core.service.impl.ConstraintsParserImpl;
+import gov.nist.hit.core.service.impl.SingleCodeBindingsParserImpl;
 import gov.nist.hit.core.service.impl.ValueSetBindingsParserImpl;
 import gov.nist.hit.core.service.impl.ValueSetLibrarySerializerImpl;
 import hl7.v2.profile.Component;
@@ -90,11 +91,12 @@ public abstract class HL7V2ProfileParser extends ProfileParser {
 	private Constraints predicates = null;
 	private ValueSetBindings valuesetBindings = null;
 	private ValueSetLibrary valueSetLibrary = null;
+	private SingleCodeBindings singleCodeBindings = null;
 	
 	ConstraintsParserImpl constraintsParser = new ConstraintsParserImpl();
 	ValueSetBindingsParserImpl valuesetBindingsParser = new ValueSetBindingsParserImpl();
 	ValueSetLibrarySerializer valueSetLibrarySerializer = new ValueSetLibrarySerializerImpl();
-	
+	SingleCodeBindingsParserImpl singleCodeBindingsParser = new SingleCodeBindingsParserImpl();
 	
 	@Override
 	/**
@@ -155,7 +157,7 @@ public abstract class HL7V2ProfileParser extends ProfileParser {
 			
 			this.valueSetLibrary = valueSetLibrarySerializer.toObject(vsXML);
 			this.valuesetBindings = valuesetBindingsParser.valueSetBindings(vsbXml,vsXML);
-					
+			this.singleCodeBindings = singleCodeBindingsParser.singleCodeBindings(vsbXml);	
 			
 			if (c2Xml != null) {
 				Constraints conformanceStatements2 = constraintsParser.confStatements(c2Xml);
@@ -296,10 +298,13 @@ public abstract class HL7V2ProfileParser extends ProfileParser {
 				model.getMessage().getId(), model.getMessage().getName()));
 		message.setPredicates(this.findPredicates(this.predicates.getMessages(), model.getMessage().getId(),
 				model.getMessage().getName()));
-		message.setValuesetbindings(this.findValueSetBindings(this.valuesetBindings.getDatatypes(), 
+		message.setValuesetbindings(this.findValueSetBindings(this.valuesetBindings.getMessages(), 
 				model.getMessage().getId(),	model.getMessage().getName()));
+		message.setSinglecodebindings(this.findSingleCodeBindings(this.singleCodeBindings.getMessages(),model.getMessage().getId(),	model.getMessage().getName()));
 
+		
 		model.addValueSetBindings(message.getValuesetbindings());
+		model.addSingleCodeBindings(message.getSinglecodebindings());
 		
 		scala.collection.immutable.List<SegRefOrGroup> children = m.structure();
 		if (children != null && !children.isEmpty()) {
@@ -497,9 +502,9 @@ public abstract class HL7V2ProfileParser extends ProfileParser {
 		element.setPredicates(this.findPredicates(this.predicates.getSegments(), s.id(), s.name()));
 		element.setConformanceStatements(this.findConformanceStatements(this.conformanceStatements.getSegments(), s.id(), s.name()));
 		element.setValuesetbindings(this.findValueSetBindings(this.valuesetBindings.getSegments(), s.id(),	s.name()));
-
-		
+		element.setSinglecodebindings(this.findSingleCodeBindings(this.singleCodeBindings.getSegments(),s.id(),	s.name()));
 		model.addValueSetBindings(element.getValuesetbindings());
+		model.addSingleCodeBindings(element.getSinglecodebindings());
 		
 //		String tables = null;
 //		ArrayList<ValueSetBinding> vsbList = this.findValueSetBindings(this.valuesetBindings.getSegments(), s.id(),	s.name());
@@ -640,7 +645,10 @@ public abstract class HL7V2ProfileParser extends ProfileParser {
 		element.setPredicates(this.findPredicates(this.predicates.getGroups(), g.id(), g.name()));
 		element.setConformanceStatements(
 				this.findConformanceStatements(this.conformanceStatements.getGroups(), g.id(), g.name()));
-
+		element.setValuesetbindings(this.findValueSetBindings(this.valuesetBindings.getGroups(), 
+				g.id(),	g.name()));
+		element.setSinglecodebindings(this.findSingleCodeBindings(this.singleCodeBindings.getGroups(),g.id(),g.name()));
+		
 		// String targetPath = getTargetPath(element);
 		// if (!targetPath.equals("")) {
 		// for (ConformanceStatement cs :
@@ -830,6 +838,8 @@ public abstract class HL7V2ProfileParser extends ProfileParser {
 			element.setPredicates(this.findPredicates(this.predicates.getDatatypes(), d.id(), d.name()));
 			element.setConformanceStatements(
 					this.findConformanceStatements(this.conformanceStatements.getDatatypes(), d.id(), d.name()));
+			
+			
 			datatypesMap.put(d.id(), element);
 			if (d instanceof Composite) {
 				Composite c = (Composite) d;
@@ -860,8 +870,10 @@ public abstract class HL7V2ProfileParser extends ProfileParser {
 			element.setPredicates(this.findPredicates(this.predicates.getDatatypes(), d.id(), d.name()));
 			element.setConformanceStatements(this.findConformanceStatements(this.conformanceStatements.getDatatypes(), d.id(), d.name()));			
 			element.setValuesetbindings(this.findValueSetBindings(this.valuesetBindings.getDatatypes(), d.id(),	d.name()));
-
+			element.setSinglecodebindings(this.findSingleCodeBindings(this.singleCodeBindings.getDatatypes(),d.id(),d.name()));
+			
 			model.addValueSetBindings(element.getValuesetbindings());
+			model.addSingleCodeBindings(element.getSinglecodebindings());
 			
 			datatypesMap.put(d.id(), element);
 			if (d instanceof Composite) {
@@ -1094,6 +1106,31 @@ public abstract class HL7V2ProfileParser extends ProfileParser {
 		}
 		return result;
 	}
+	
+	private ArrayList<SingleCodeBinding> findSingleCodeBindings(gov.nist.hit.core.domain.singlecodebindings.Context context, String id, String name) {
+		Set<gov.nist.hit.core.domain.singlecodebindings.ByNameOrByID> byNameOrByIDs = context.getByNameOrByIDs();
+		ArrayList<SingleCodeBinding> result = new ArrayList<SingleCodeBinding>();
+		for (gov.nist.hit.core.domain.singlecodebindings.ByNameOrByID byNameOrByID : byNameOrByIDs) {
+			if (byNameOrByID instanceof gov.nist.hit.core.domain.singlecodebindings.ByID) {
+				gov.nist.hit.core.domain.singlecodebindings.ByID byID = (gov.nist.hit.core.domain.singlecodebindings.ByID) byNameOrByID;
+				if (byID.getByID().equals(id)) {
+					for (SingleCodeBinding c : byID.getSingleCodeBindings()) {
+						result.add(c);
+					}
+				}
+			} else if (byNameOrByID instanceof gov.nist.hit.core.domain.singlecodebindings.ByName) {
+				gov.nist.hit.core.domain.singlecodebindings.ByName byName = (gov.nist.hit.core.domain.singlecodebindings.ByName) byNameOrByID;
+				if (byName.getByName().equals(name)) {
+					for (SingleCodeBinding c : byName.getSingleCodeBindings()) {
+						result.add(c);
+					}
+				}
+			}
+		}
+		return result;
+	}
+	
+	
 	
 	  private Document stringToDom(String xmlSource) {
 		    DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
