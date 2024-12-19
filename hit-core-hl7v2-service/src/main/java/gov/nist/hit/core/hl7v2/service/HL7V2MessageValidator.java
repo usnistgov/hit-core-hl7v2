@@ -141,9 +141,7 @@ public abstract class HL7V2MessageValidator implements MessageValidator {
 				}
 				
 						
-				
-//				boolean newversion = true;		
-				
+								
 				InputStream valueSetLibraryIS = null ,valueSetBindingsIS = null,coConstraintsIS= null,slicingsIS = null;
 				if (v2TestContext.getVocabularyLibrary() != null) {
 					valueSetLibraryIS = IOUtils.toInputStream(v2TestContext.getVocabularyLibrary().getXml(), StandardCharsets.UTF_8);
@@ -159,11 +157,9 @@ public abstract class HL7V2MessageValidator implements MessageValidator {
 				}
 				
 				
-				//CloseableHttpClient httpClient = HttpClients.createDefault();// HttpClientBuilder.create().build();
-//				CloseableHttpClient httpClient = HttpClients.createDefault();
-				
-				v2TestContext.getApikeys();
-				
+
+							
+				//configure external value set validation/fetching
 				SSLContextBuilder builder = new SSLContextBuilder();
 				RequestConfig requestConfig = RequestConfig.custom().setConnectionRequestTimeout(2 * 1000).setConnectTimeout(2 * 1000)
 						.setSocketTimeout(2 * 1000).build();
@@ -181,7 +177,6 @@ public abstract class HL7V2MessageValidator implements MessageValidator {
 				
 					
 				if (configuration != null) {					
-//					if (newversion) {
 						report = vp.validateNew(message,
 								v2TestContext.getConformanceProfile().getXml(),
 								valueSetLibraryIS,
@@ -192,16 +187,9 @@ public abstract class HL7V2MessageValidator implements MessageValidator {
 								conformanceProfielId,
 								Context.valueOf(contextType),
 								configuration,httpClient);
-//					}else {
-						//to be removed 
-//						String valueSets = v2TestContext.getVocabularyLibrary().getXml();
-//						ValueSetLibrary vsLib = valueSets != null ? getValueSetLibrary(IOUtils.toInputStream(valueSets, StandardCharsets.UTF_8)) : null;
-//						report = vp.validate(message, v2TestContext.getConformanceProfile().getXml(), c, vsLib,
-//								conformanceProfielId, Context.valueOf(contextType),configuration);
-//					}													
+												
 					HITStatsLogger.log(username, organization, operation, testContext.getDomain());					
 				}else {
-//					if (newversion) {
 						report = vp.validateNew(message,
 								v2TestContext.getConformanceProfile().getXml(),
 								valueSetLibraryIS,
@@ -212,13 +200,6 @@ public abstract class HL7V2MessageValidator implements MessageValidator {
 								conformanceProfielId,
 								Context.valueOf(contextType),
 								null,httpClient);
-//					}else {
-						//to be removed
-//						String valueSets = v2TestContext.getVocabularyLibrary().getXml();
-//						ValueSetLibrary vsLib = valueSets != null ? getValueSetLibrary(IOUtils.toInputStream(valueSets, StandardCharsets.UTF_8)) : null;
-//						report = vp.validate(message, v2TestContext.getConformanceProfile().getXml(), c, vsLib,
-//							conformanceProfielId, Context.valueOf(contextType));
-//					}
 					HITStatsLogger.log(username, organization, operation, testContext.getDomain());
 				}
 				

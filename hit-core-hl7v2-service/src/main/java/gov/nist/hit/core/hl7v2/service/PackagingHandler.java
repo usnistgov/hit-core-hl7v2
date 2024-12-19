@@ -4,6 +4,8 @@ import java.io.File;
 import java.util.List;
 import java.util.Set;
 
+import org.w3c.dom.Document;
+
 import gov.nist.hit.core.domain.UploadedProfileModel;
 
 public interface PackagingHandler {
@@ -37,6 +39,8 @@ public interface PackagingHandler {
 	public String changeSlicingsId(String slicingsFile) throws Exception;
 
 	public String changeVsbId(String vsbFile) throws Exception;
+
+	public Document toDoc(String xmlSource);
 
 	
 

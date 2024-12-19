@@ -6,8 +6,12 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.Transient;
 
-import jakarta.persistence.Table;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+
 
 @Entity
 public class APIKey implements Serializable {
@@ -22,7 +26,13 @@ public class APIKey implements Serializable {
 
 	private String bindingUrl;
 
+	@JsonIgnore
 	private String bindingKey;
+		
+	@Transient
+	@JsonSerialize
+	@JsonDeserialize
+	private Boolean hasBindingKey;
 
 	public APIKey(String bindingIdentifier, String bindingUrl, String bindingKey) {
 		super();
@@ -65,6 +75,18 @@ public class APIKey implements Serializable {
 
 	public void setBindingKey(String bindingKey) {
 		this.bindingKey = bindingKey;
+	}
+
+	public Boolean getHasBindingKey() {
+		if(bindingKey != null && !bindingKey.isEmpty()) {
+			return true;
+		}else {
+			return false;
+		}
+	}
+
+	public void setHasBindingKey(Boolean hasBindingKey) {
+		this.hasBindingKey = hasBindingKey;
 	}
 
 	

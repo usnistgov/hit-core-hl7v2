@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import javax.persistence.EntityManager;
@@ -40,15 +41,19 @@ import gov.nist.hit.core.domain.TestScope;
 import gov.nist.hit.core.domain.TestingStage;
 import gov.nist.hit.core.domain.UploadedProfileModel;
 import gov.nist.hit.core.domain.ValueSetBindings;
+import gov.nist.hit.core.domain.ValueSetDefinition;
 import gov.nist.hit.core.domain.VocabularyLibrary;
+import gov.nist.hit.core.domain.valuesetbindings.Binding;
+import gov.nist.hit.core.domain.valuesetbindings.ValueSetBinding;
+import gov.nist.hit.core.hl7v2.domain.APIKey;
 import gov.nist.hit.core.hl7v2.domain.HL7V2TestContext;
 import gov.nist.hit.core.hl7v2.domain.HLV2TestCaseDocument;
 import gov.nist.hit.core.hl7v2.repo.HL7V2TestContextRepository;
 import gov.nist.hit.core.hl7v2.service.HL7V2ProfileParser;
 import gov.nist.hit.core.hl7v2.service.HL7V2ResourceLoader;
-import gov.nist.hit.core.hl7v2.service.PackagingHandler;
 import gov.nist.hit.core.service.ValueSetLibrarySerializer;
 import gov.nist.hit.core.service.exception.ProfileParserException;
+import gov.nist.hit.core.service.impl.ValueSetBindingsParserImpl;
 import gov.nist.hit.core.service.impl.ValueSetLibrarySerializerImpl;
 import gov.nist.hit.core.service.util.FileUtil;
 
@@ -63,7 +68,7 @@ public class HL7V2ResourceLoaderImpl extends HL7V2ResourceLoader {
 	HL7V2TestContextRepository testContextRepository;
 
 	@Autowired
-	private PackagingHandler packagingHandler;
+	private PackagingHandlerImpl packagingHandler;
 
 	HL7V2ProfileParser profileParser = new HL7V2ProfileParserImpl();
 	ValueSetLibrarySerializer valueSetLibrarySerializer = new ValueSetLibrarySerializerImpl();
@@ -581,6 +586,10 @@ public class HL7V2ResourceLoaderImpl extends HL7V2ResourceLoader {
 			testContext.setValueSetBindings(vsb);
 		}
 		
+		
+		
+		
+		 	
 		try {
 			Resource resource = this.getResource(path + CONSTRAINTS_FILE_PATTERN, rootPath);
 			
@@ -588,7 +597,7 @@ public class HL7V2ResourceLoaderImpl extends HL7V2ResourceLoader {
 				String content = IOUtils.toString(resource.getInputStream());
 				content = packagingHandler.changeConstraintId(content);
 				Constraints co = createAdditionalConstraint(content, domain, scope, authorUsername, preloaded);
-				testContext.setAddditionalConstraints(co);
+				testContext.setAddditionalConstraints(co);				
 			}
 		
 		} catch (Exception e) {
@@ -690,6 +699,24 @@ public class HL7V2ResourceLoaderImpl extends HL7V2ResourceLoader {
 				throw new RuntimeException("Failed to parse integrationProfile at " + path);
 			}
 		}
+		
+		List<ValueSetDefinition> listOfExternalVSD = packagingHandler.getExternalValueSets(testContext.getVocabularyLibrary().getXml());
+		ValueSetBindingsParserImpl valuesetBindingsParser = new ValueSetBindingsParserImpl();
+		ProfileModel profileModel = profileParser.parseEnhanced(testContext.getConformanceProfile().getXml(), testContext.getConformanceProfile().getSourceId()+"", null,
+				null,testContext.getVocabularyLibrary().getXml(),testContext.getValueSetBindings().getXml(), testContext.getCoConstraints().getXml(), testContext.getSlicings().getXml());
+		
+		for (ValueSetBinding vsb  : profileModel.getValueSetBinding()) {
+			
+			for (Binding binding  : vsb.getBindingList()) {
+					Optional<ValueSetDefinition> matchedObject = listOfExternalVSD.stream()
+							  .filter(item -> item.getBindingIdentifier().equals(binding.getBindingIdentifier()))
+							  .findFirst();
+					if(matchedObject.isPresent()) {
+						testContext.getApikeys().add(new APIKey(matchedObject.get().getBindingIdentifier(),matchedObject.get().getUrl(),null));
+					}				
+			}
+		}
+		
 		return testContext;
 	}
 
@@ -773,6 +800,23 @@ public class HL7V2ResourceLoaderImpl extends HL7V2ResourceLoader {
 		vocabLibrary.setPreloaded(preloaded);
 		vocabLibrary.setJson(obm.writeValueAsString(valueSetLibrarySerializer.toObject(content)));
 		return vocabLibrary;
+	}
+	
+	public List<ValueSetDefinition> getExternalValueSetsInFolder(String folder) {
+		List<ValueSetDefinition> listOfExternalVSD = new ArrayList<ValueSetDefinition>();
+		List<Resource> resources;
+		try {
+			resources = this.getApiResources("*.xml", folder);
+
+			for (Resource resource : resources) {
+				List<ValueSetDefinition> list = packagingHandler.getExternalValueSets(FileUtil.getContent(resource));
+				listOfExternalVSD.addAll(list);
+			}
+
+		} catch (Exception e) {
+
+		}
+		return listOfExternalVSD;
 	}
 
 }

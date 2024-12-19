@@ -27,6 +27,7 @@ import javax.xml.transform.stream.StreamResult;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -45,12 +46,14 @@ import gov.nist.hit.core.hl7v2.service.HL7V2ProfileParser;
 import gov.nist.hit.core.hl7v2.service.PackagingHandler;
 import gov.nist.hit.core.service.CachedRepository;
 import gov.nist.hit.core.service.exception.ProfileParserException;
+import gov.nist.hit.core.service.util.FileUtil;
 
 @Service
 public class PackagingHandlerImpl implements PackagingHandler {
 
 	@Autowired
 	protected CachedRepository cachedRepository;
+	
 
 	@Override
 	public List<UploadedProfileModel> getUploadedProfiles(String profileXML, String valueSetXML, String valueSetBindingsXML) {
@@ -100,12 +103,7 @@ public class PackagingHandlerImpl implements PackagingHandler {
 				e.printStackTrace();
 			}
 			
-			
-//			check if ex vs are present.
-//			upm.setExternalValueSets(listOfExternalVS);
-			// get list of external value sets.
-			
-			
+						
 			if (cachedRepository.getCachedProfiles().containsKey(elmIntegrationProfile.getAttribute("ID"))) {
 				// remove them from cache or it will trigger an error.
 				cachedRepository.getCachedProfiles().remove(elmIntegrationProfile.getAttribute("ID"));
@@ -142,6 +140,11 @@ public class PackagingHandlerImpl implements PackagingHandler {
 		}
 		return listOfExternalVSD;
 	}
+	
+	
+	
+	
+	
 
 	@Override
 	public String removeUnusedAndDuplicateMessages(String content, Set<UploadedProfileModel> presentMessages) {
@@ -202,7 +205,8 @@ public class PackagingHandlerImpl implements PackagingHandler {
 		return zipfile;
 	}
 
-	protected Document toDoc(String xmlSource) {
+	@Override
+	public Document toDoc(String xmlSource) {
 		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 		factory.setXIncludeAware(false);
 		factory.setNamespaceAware(true);

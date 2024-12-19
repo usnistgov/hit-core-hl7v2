@@ -16,6 +16,7 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.Principal;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,7 +32,6 @@ import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -65,11 +65,13 @@ import gov.nist.hit.core.domain.TestScope;
 import gov.nist.hit.core.domain.TestStep;
 import gov.nist.hit.core.domain.TestStepValidationReport;
 import gov.nist.hit.core.domain.TestingStage;
+import gov.nist.hit.core.hl7v2.domain.HL7V2TestContext;
 import gov.nist.hit.core.hl7v2.service.FileValidationHandler;
+import gov.nist.hit.core.hl7v2.service.impl.HL7V2ResourceLoaderImpl;
+import gov.nist.hit.core.hl7v2.service.impl.PackagingHandlerImpl;
 import gov.nist.hit.core.service.AccountService;
 import gov.nist.hit.core.service.AppInfoService;
 import gov.nist.hit.core.service.BundleHandler;
-import gov.nist.hit.core.service.ResourceLoader;
 import gov.nist.hit.core.service.TestArtifactService;
 import gov.nist.hit.core.service.TestCaseGroupService;
 import gov.nist.hit.core.service.TestCaseService;
@@ -110,8 +112,8 @@ public class CBManagementController {
 	private TestPlanService testPlanService;
 
 	@Autowired
-	@Qualifier("resourceLoader")
-	private ResourceLoader resourceLoader;
+//	@Qualifier("resourceLoader")
+	private HL7V2ResourceLoaderImpl resourceLoader;
 
 	@Autowired
 	private TestCaseService testCaseService;
@@ -149,16 +151,17 @@ public class CBManagementController {
 	@Autowired
 	private FileValidationHandler fileValidationHandler;
 
+	@Autowired
+	private PackagingHandlerImpl packagingHandlerImpl;
+
 	@PostConstruct
 	public void init() {
 		CB_RESOURCE_BUNDLE_DIR = appInfoService.getUploadsFolderPath() + "/cb";
 	}
 
 	@RequestMapping(value = "/testPlans", method = RequestMethod.GET, produces = "application/json")
-	public List<TestPlan> getTestPlans(
-			@ApiParam(value = "the scope of the test plans", required = false) @RequestParam(required = false) TestScope scope,
-			HttpServletRequest request, HttpServletResponse response, @RequestParam(required = true) String domain)
-			throws Exception {
+	public List<TestPlan> getTestPlans(@ApiParam(value = "the scope of the test plans", required = false) @RequestParam(required = false) TestScope scope,
+			HttpServletRequest request, HttpServletResponse response, @RequestParam(required = true) String domain) throws Exception {
 		checkManagementSupport();
 		logger.info("Fetching all testplans of type=" + scope + "...");
 		List<TestPlan> results = null;
@@ -172,9 +175,8 @@ public class CBManagementController {
 				String email = account.getEmail();
 				if (userService.isAdminByEmail(email) || userService.isAdmin(username)) {
 					results = testPlanService.findShortAllByStageAndScopeAndDomain(TestingStage.CB, scope, domain);
-				}else {
-					results = testPlanService.findAllShortByStageAndUsernameAndScopeAndDomain(TestingStage.CB, username, scope,
-							domain);
+				} else {
+					results = testPlanService.findAllShortByStageAndUsernameAndScopeAndDomain(TestingStage.CB, username, scope, domain);
 				}
 			}
 		}
@@ -183,13 +185,29 @@ public class CBManagementController {
 
 	@ApiOperation(value = "Find a context-based test plan by its id", nickname = "getOneTestPlanById")
 	@RequestMapping(value = "/testPlans/{testPlanId}", method = RequestMethod.GET, produces = "application/json")
-	public TestPlan testPlan(
-			@ApiParam(value = "the id of the test plan", required = true) @PathVariable final Long testPlanId,
-			HttpServletRequest request, HttpServletResponse response) throws Exception {
+	public TestPlan testPlan(@ApiParam(value = "the id of the test plan", required = true) @PathVariable final Long testPlanId, HttpServletRequest request,
+			HttpServletResponse response) throws Exception {
 		logger.info("Fetching  test case...");
 		checkManagementSupport();
 		TestPlan testPlan = testPlanService.findOne(testPlanId);
 		return testPlan;
+	}
+	
+	@RequestMapping(value = "/testPlans/{testPlanId}/testStepsWithExternalValueSets", method = RequestMethod.GET, produces = "application/json")
+	public List<TestStep> testStepsWithExternalValueSets(@ApiParam(value = "the id of the test plan", required = true) @PathVariable final Long testPlanId, HttpServletRequest request,
+			HttpServletResponse response) throws Exception {
+		logger.info("Fetching  test case...");
+		checkManagementSupport();
+		TestPlan testPlan = testPlanService.findOne(testPlanId);
+			List<TestStep> list = new ArrayList<TestStep>();
+			List<TestStep> stList = testPlan.getAllTestSteps();
+			for(TestStep ts : stList) {
+				HL7V2TestContext  tc = (HL7V2TestContext)ts.getTestContext();
+				if(!tc.getApikeys().isEmpty()) {
+					list.add(ts);
+				}
+			}
+		return list;
 	}
 
 	@PreAuthorize("hasRole('tester')")
@@ -229,9 +247,8 @@ public class CBManagementController {
 
 	@PreAuthorize("hasRole('tester')")
 	@RequestMapping(value = "/testCaseGroups/{testCaseGroupId}/testCases/{testCaseId}/delete", method = RequestMethod.POST, produces = "application/json")
-	public ResourceUploadStatus deleteTestCaseGroupTestCase(HttpServletRequest request,
-			@PathVariable("testCaseId") Long testCaseId, @PathVariable("testCaseGroupId") Long testCaseGroupId,
-			Principal p) throws Exception {
+	public ResourceUploadStatus deleteTestCaseGroupTestCase(HttpServletRequest request, @PathVariable("testCaseId") Long testCaseId,
+			@PathVariable("testCaseGroupId") Long testCaseGroupId, Principal p) throws Exception {
 		checkManagementSupport();
 		TestCaseGroup tp = testCaseGroupService.findOne(testCaseGroupId);
 		if (tp != null) {
@@ -300,8 +317,7 @@ public class CBManagementController {
 	}
 
 	@RequestMapping(value = "/testPlans/{testPlanId}/delete", method = RequestMethod.POST, produces = "application/json")
-	public ResourceUploadStatus deleteTestPlan(HttpServletRequest request, @PathVariable("testPlanId") Long testPlanId,
-			Principal p) throws Exception {
+	public ResourceUploadStatus deleteTestPlan(HttpServletRequest request, @PathVariable("testPlanId") Long testPlanId, Principal p) throws Exception {
 		checkManagementSupport();
 		TestPlan testPlan = testPlanService.findOne(testPlanId);
 		checkPermission(testPlanId, testPlan, p);
@@ -347,19 +363,19 @@ public class CBManagementController {
 
 	@PreAuthorize("hasRole('tester')")
 	@RequestMapping(value = "/testSteps/{testStepId}/name", method = RequestMethod.POST)
-	public ResourceUploadStatus updateTestStepName(HttpServletRequest request, @PathVariable("testStepId") Long testStepId,
-			Principal p, @RequestBody TestCaseCommand ts) throws Exception {
+	public ResourceUploadStatus updateTestStepName(HttpServletRequest request, @PathVariable("testStepId") Long testStepId, Principal p,
+			@RequestBody TestCaseCommand ts) throws Exception {
 		checkManagementSupport();
 		String name = ts.getName();
 		TestStep testStep = testStepService.findOne(testStepId);
 		checkPermission(testStepId, testStep, p);
 		testStep.setName(name);
 		testStepService.save(testStep);
-		
+
 		TestPlan tp = testPlanService.findTestPlanContainingAbstractTestCase(testStep);
 		tp.updateUpdateDate();
 		testPlanService.save(tp);
-		
+
 		ResourceUploadStatus result = new ResourceUploadStatus();
 		result.setType(ResourceType.TESTSTEP);
 		result.setAction(ResourceUploadAction.UPDATE);
@@ -370,19 +386,19 @@ public class CBManagementController {
 
 	@PreAuthorize("hasRole('tester')")
 	@RequestMapping(value = "/testCases/{testCaseId}/name", method = RequestMethod.POST)
-	public ResourceUploadStatus updateTestCaseName(HttpServletRequest request,
-			@PathVariable("testCaseId") Long testCaseId, Principal p, @RequestBody TestCaseCommand tc) throws Exception {
+	public ResourceUploadStatus updateTestCaseName(HttpServletRequest request, @PathVariable("testCaseId") Long testCaseId, Principal p,
+			@RequestBody TestCaseCommand tc) throws Exception {
 		checkManagementSupport();
 		String name = tc.getName();
 		TestCase testCase = testCaseService.findOne(testCaseId);
 		checkPermission(testCaseId, testCase, p);
 		testCase.setName(name);
 		testCaseService.save(testCase);
-		
+
 		TestPlan tp = testPlanService.findTestPlanContainingAbstractTestCase(testCase);
 		tp.updateUpdateDate();
 		testPlanService.save(tp);
-		
+
 		ResourceUploadStatus result = new ResourceUploadStatus();
 		result.setType(ResourceType.TESTCASE);
 		result.setAction(ResourceUploadAction.UPDATE);
@@ -393,8 +409,8 @@ public class CBManagementController {
 
 	@PreAuthorize("hasRole('tester')")
 	@RequestMapping(value = "/testPlans/{testPlanId}/name", method = RequestMethod.POST)
-	public ResourceUploadStatus updateTestPlanName(HttpServletRequest request,
-			@PathVariable("testPlanId") Long testPlanId, Principal p, @RequestBody TestCaseCommand tp) throws Exception {
+	public ResourceUploadStatus updateTestPlanName(HttpServletRequest request, @PathVariable("testPlanId") Long testPlanId, Principal p,
+			@RequestBody TestCaseCommand tp) throws Exception {
 		checkManagementSupport();
 		String name = tp.getName();
 		TestPlan testPlan = testPlanService.findOne(testPlanId);
@@ -410,19 +426,16 @@ public class CBManagementController {
 	}
 
 	@RequestMapping(value = "/testPlans/{testPlanId}/publish", method = RequestMethod.POST, produces = "application/json")
-	public ResourceUploadStatus publishTestPlan(HttpServletRequest request, @PathVariable("testPlanId") Long testPlanId,
-			Principal p) throws Exception {
+	public ResourceUploadStatus publishTestPlan(HttpServletRequest request, @PathVariable("testPlanId") Long testPlanId, Principal p) throws Exception {
 		return updateTestPlanScope(request, testPlanId, p, TestScope.GLOBAL);
 	}
 
 	@RequestMapping(value = "/testPlans/{testPlanId}/unpublish", method = RequestMethod.POST, produces = "application/json")
-	public ResourceUploadStatus unpublishTestPlan(HttpServletRequest request,
-			@PathVariable("testPlanId") Long testPlanId, Principal p) throws Exception {
+	public ResourceUploadStatus unpublishTestPlan(HttpServletRequest request, @PathVariable("testPlanId") Long testPlanId, Principal p) throws Exception {
 		return updateTestPlanScope(request, testPlanId, p, TestScope.USER);
 	}
 
-	public ResourceUploadStatus updateTestPlanScope(HttpServletRequest request, Long testPlanId, Principal p,
-			TestScope scope) throws Exception {
+	public ResourceUploadStatus updateTestPlanScope(HttpServletRequest request, Long testPlanId, Principal p, TestScope scope) throws Exception {
 		checkManagementSupport();
 		TestPlan testPlan = testPlanService.findOne(testPlanId);
 		checkPermission(testPlanId, testPlan, p);
@@ -473,8 +486,8 @@ public class CBManagementController {
 	}
 
 	public ResourceUploadStatus deleteTestCaseGroup(TestCaseGroup testCaseGroup) throws Exception {
-		checkManagementSupport();		
-		testCaseGroupService.delete(testCaseGroup);		
+		checkManagementSupport();
+		testCaseGroupService.delete(testCaseGroup);
 		ResourceUploadStatus result = new ResourceUploadStatus();
 		result.setType(ResourceType.TESTCASEGROUP);
 		result.setAction(ResourceUploadAction.DELETE);
@@ -484,8 +497,7 @@ public class CBManagementController {
 	}
 
 	@RequestMapping(value = "/testPlans/{testPlanId}/testCaseGroups/{testCaseGroupId}/delete", method = RequestMethod.POST, produces = "application/json")
-	public ResourceUploadStatus deleteTestCaseGroup(HttpServletRequest request,
-			@PathVariable("testCaseGroupId") Long testCaseGroupId, Principal p,
+	public ResourceUploadStatus deleteTestCaseGroup(HttpServletRequest request, @PathVariable("testCaseGroupId") Long testCaseGroupId, Principal p,
 			@PathVariable("testPlanId") Long testPlanId) throws Exception {
 		checkManagementSupport();
 		TestPlan tp = testPlanService.findOne(testPlanId);
@@ -520,8 +532,7 @@ public class CBManagementController {
 	}
 
 	@RequestMapping(value = "/testCaseGroups/{parentTestCaseGroupId}/testCaseGroups/{testCaseGroupId}/delete", method = RequestMethod.POST, produces = "application/json")
-	public ResourceUploadStatus deleteTestCaseGroup2(HttpServletRequest request,
-			@PathVariable("testCaseGroupId") Long testCaseGroupId, Principal p,
+	public ResourceUploadStatus deleteTestCaseGroup2(HttpServletRequest request, @PathVariable("testCaseGroupId") Long testCaseGroupId, Principal p,
 			@PathVariable("parentTestCaseGroupId") Long parentTestCaseGroupId) throws Exception {
 		checkManagementSupport();
 		TestCaseGroup tp = testCaseGroupService.findOne(parentTestCaseGroupId);
@@ -584,20 +595,19 @@ public class CBManagementController {
 
 	@PreAuthorize("hasRole('tester')")
 	@RequestMapping(value = "/testCaseGroups/{testCaseGroupId}/name", method = RequestMethod.POST)
-	public ResourceUploadStatus updateTestCaseGroupName(HttpServletRequest request,
-			@PathVariable("testCaseGroupId") Long testCaseGroupId, Principal p, @RequestBody TestCaseCommand tcg)
-			throws Exception {
+	public ResourceUploadStatus updateTestCaseGroupName(HttpServletRequest request, @PathVariable("testCaseGroupId") Long testCaseGroupId, Principal p,
+			@RequestBody TestCaseCommand tcg) throws Exception {
 		checkManagementSupport();
 		String name = tcg.getName();
 		TestCaseGroup testCaseGroup = testCaseGroupService.findOne(testCaseGroupId);
 		checkPermission(testCaseGroupId, testCaseGroup, p);
 		testCaseGroup.setName(name);
 		testCaseGroupService.save(testCaseGroup);
-		
+
 		TestPlan tp = testPlanService.findTestPlanContainingAbstractTestCase(testCaseGroup);
 		tp.updateUpdateDate();
 		testPlanService.save(tp);
-		
+
 		ResourceUploadStatus result = new ResourceUploadStatus();
 		result.setType(ResourceType.TESTCASEGROUP);
 		result.setAction(ResourceUploadAction.UPDATE);
@@ -609,9 +619,8 @@ public class CBManagementController {
 	@PreAuthorize("hasRole('tester')")
 	@RequestMapping(value = "/artifacts/{artifactId}", method = RequestMethod.POST, produces = "application/json", consumes = {
 			"application/x-www-form-urlencoded;" })
-	public ResourceUploadStatus updateArtifact(HttpServletRequest request, @PathVariable("artifactId") Long artifactId,
-			@RequestParam("content") String content, Principal p,
-			@RequestParam(name = "token", required = false) String token) throws Exception {
+	public ResourceUploadStatus updateArtifact(HttpServletRequest request, @PathVariable("artifactId") Long artifactId, @RequestParam("content") String content,
+			Principal p, @RequestParam(name = "token", required = false) String token) throws Exception {
 		// String username = null;
 		String username = userIdService.getCurrentUserName(p);
 		if (username == null)
@@ -636,8 +645,7 @@ public class CBManagementController {
 
 	@PreAuthorize("hasRole('tester')")
 	@RequestMapping(value = "/artifacts/{artifactId}/delete", method = RequestMethod.POST, produces = "application/json")
-	public ResourceUploadStatus deleteArtifact(HttpServletRequest request, @PathVariable("artifactId") Long artifactId,
-			Principal p) throws Exception {
+	public ResourceUploadStatus deleteArtifact(HttpServletRequest request, @PathVariable("artifactId") Long artifactId, Principal p) throws Exception {
 		checkManagementSupport();
 		// String username = null;
 		String username = userIdService.getCurrentUserName(p);
@@ -659,12 +667,9 @@ public class CBManagementController {
 	/**
 	 * Uploads zip file and stores it in a temporary directory
 	 * 
-	 * @param request
-	 *            Client request
-	 * @param part
-	 *            Zip file
-	 * @param p
-	 *            Principal
+	 * @param request Client request
+	 * @param part    Zip file
+	 * @param p       Principal
 	 * @return a token or some errors
 	 * @throws MessageUploadException
 	 */
@@ -672,8 +677,8 @@ public class CBManagementController {
 	@RequestMapping(value = "/uploadZip", method = RequestMethod.POST, consumes = { "multipart/form-data" })
 	@ResponseBody
 	@Transactional(value = "transactionManager")
-	public ResourceUploadStatus uploadZip(ServletRequest request, @RequestPart("file") MultipartFile part, Principal p,
-			Authentication u) throws MessageUploadException {
+	public ResourceUploadStatus uploadZip(ServletRequest request, @RequestPart("file") MultipartFile part, Principal p, Authentication u)
+			throws MessageUploadException {
 		try {
 			Map<String, Object> resultMap = new HashMap<String, Object>();
 
@@ -704,8 +709,7 @@ public class CBManagementController {
 					ResourceUploadStatus result = new ResourceUploadStatus();
 					result.setAction(ResourceUploadAction.UPLOAD);
 					result.setStatus(ResourceUploadResult.FAILURE);
-					result.setMessage(
-							"A different test plan with the same identifier already exists and belongs to a different user");
+					result.setMessage("A different test plan with the same identifier already exists and belongs to a different user");
 					return result;
 				}
 
@@ -717,35 +721,7 @@ public class CBManagementController {
 			result.setStatus(ResourceUploadResult.SUCCESS);
 			result.setToken(token);
 			return result;
-
-			// check domain
-
-			// ADD globals
-			// if(Files.exists(Paths.get(directory + "/Global/Profiles"))) {
-			// resourceLoader.addOrReplaceIntegrationProfile(directory +
-			// "/Global/Profiles/",domain, TestScope.USER, u.getName(), false);
-			// }
-			// if(Files.exists(Paths.get(directory + "/Global/Constraints/"))) {
-			// resourceLoader.addOrReplaceConstraints(directory +
-			// "/Global/Constraints/",domain, TestScope.USER, u.getName(),
-			// false);
-			// }
-			// if(Files.exists(Paths.get(directory + "/Global/Tables/"))) {
-			// resourceLoader.addOrReplaceValueSet(directory +
-			// "/Global/Tables/",domain, TestScope.USER, u.getName(), false);
-			// }
-			//
-			//
-			// List<TestPlan> plans =
-			// resourceLoader.createTP(directory + "/Contextbased/", domain,
-			// TestScope.USER, u.getName(), false);
-			// TestPlan tp = plans.get(0);
-			// updateToUser(tp, TestScope.USER, username);
-			// ResourceUploadStatus result = resourceLoader.handleTP(tp);
-			// result.setId(tp.getId());
-			// FileUtils.deleteDirectory(new File(directory));
-			// return result;
-			// }
+		
 		} catch (NoUserFoundException e) {
 			ResourceUploadStatus result = new ResourceUploadStatus();
 			result.setAction(ResourceUploadAction.UPLOAD);
@@ -774,12 +750,9 @@ public class CBManagementController {
 	/**
 	 * Uploads zip file and stores it in a temporary directory
 	 * 
-	 * @param request
-	 *            Client request
-	 * @param part
-	 *            Zip file
-	 * @param p
-	 *            Principal
+	 * @param request Client request
+	 * @param part    Zip file
+	 * @param p       Principal
 	 * @return a token or some errors
 	 * @throws MessageUploadException
 	 */
@@ -787,8 +760,8 @@ public class CBManagementController {
 	@RequestMapping(value = "/saveZip", method = RequestMethod.POST, produces = "application/json")
 	@ResponseBody
 	@Transactional(value = "transactionManager")
-	public ResourceUploadStatus saveZip(ServletRequest request, Principal p, @RequestBody Map<String, Object> params,
-			Authentication u) throws MessageUploadException {
+	public ResourceUploadStatus saveZip(ServletRequest request, Principal p, @RequestBody Map<String, Object> params, Authentication u)
+			throws MessageUploadException {
 		boolean isAdmin = false;
 		try {
 
@@ -802,39 +775,31 @@ public class CBManagementController {
 
 			// ADD globals
 			if (Files.exists(Paths.get(directory + "/Global/Profiles"))) {
-				resourceLoader.addOrReplaceIntegrationProfile(directory + "/Global/Profiles/", domain, TestScope.USER,
-						u.getName()	, false);
+				resourceLoader.addOrReplaceIntegrationProfile(directory + "/Global/Profiles/", domain, TestScope.USER, u.getName(), false);
 			}
 			if (Files.exists(Paths.get(directory + "/Global/Constraints/"))) {
-				resourceLoader.addOrReplaceConstraints(directory + "/Global/Constraints/", domain, TestScope.USER,
-						u.getName(), false);
+				resourceLoader.addOrReplaceConstraints(directory + "/Global/Constraints/", domain, TestScope.USER, u.getName(), false);
 			}
 			if (Files.exists(Paths.get(directory + "/Global/Tables/"))) {
-				resourceLoader.addOrReplaceValueSet(directory + "/Global/Tables/", domain, TestScope.USER, u.getName(),
-						false);
+				resourceLoader.addOrReplaceValueSet(directory + "/Global/Tables/", domain, TestScope.USER, u.getName(), false);
 			}
 			if (Files.exists(Paths.get(directory + "/Global/CoConstraints/"))) {
-				resourceLoader.addOrReplaceCoConstraints(directory + "/Global/CoConstraints/", domain, TestScope.USER, u.getName(),
-						false);
+				resourceLoader.addOrReplaceCoConstraints(directory + "/Global/CoConstraints/", domain, TestScope.USER, u.getName(), false);
 			}
 			if (Files.exists(Paths.get(directory + "/Global/Bindings/"))) {
-				resourceLoader.addOrReplaceValueSetBindings(directory + "/Global/Bindings/", domain, TestScope.USER, u.getName(),
-						false);
+				resourceLoader.addOrReplaceValueSetBindings(directory + "/Global/Bindings/", domain, TestScope.USER, u.getName(), false);
 			}
 			if (Files.exists(Paths.get(directory + "/Global/Slicings/"))) {
-				resourceLoader.addOrReplaceSlicings(directory + "/Global/Slicings/", domain, TestScope.USER, u.getName(),
-						false);
+				resourceLoader.addOrReplaceSlicings(directory + "/Global/Slicings/", domain, TestScope.USER, u.getName(), false);
 			}
 
-			List<TestPlan> plans = resourceLoader.createTP(directory + "/Contextbased/", domain, TestScope.USER,
-					u.getName(), false);
+			List<TestPlan> plans = resourceLoader.createTP(directory + "/Contextbased/", domain, TestScope.USER, u.getName(), false);
 			TestPlan tp = plans.get(0);
 			updateToUser(tp, TestScope.USER, username);
 			ResourceUploadStatus result = resourceLoader.handleTP(tp);
 			result.setId(tp.getId());
 			FileUtils.deleteDirectory(new File(directory));
-			return result;
-			// }
+			return result;			
 
 		} catch (NoUserFoundException e) {
 			ResourceUploadStatus result = new ResourceUploadStatus();
@@ -851,16 +816,16 @@ public class CBManagementController {
 			return result;
 
 		} catch (Exception e) {
-			e.printStackTrace();		
+			e.printStackTrace();
 			ResourceUploadStatus result = new ResourceUploadStatus();
 			result.setAction(ResourceUploadAction.ADD);
 			result.setStatus(ResourceUploadResult.FAILURE);
-			if(isAdmin){		
+			if (isAdmin) {
 				result.setMessage(e.getMessage());
-			}else {
+			} else {
 				result.setMessage("An exception occured");
 			}
-			
+
 			return result;
 		}
 	}
@@ -920,13 +885,10 @@ public class CBManagementController {
 			step.setAuthorUsername(username);
 		}
 	}
-	
-	
+
 	private void updateDateOfParentTestPlan(TestCaseGroup tcg) {
 		List<TestPlan> list = testPlanService.findShortAllByStageAndDomain(tcg.getStage(), tcg.getDomain());
-		
-		
-		
+
 	}
 
 }
