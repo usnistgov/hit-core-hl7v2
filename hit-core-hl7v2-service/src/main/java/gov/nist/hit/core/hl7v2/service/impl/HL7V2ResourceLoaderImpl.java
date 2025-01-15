@@ -700,22 +700,27 @@ public class HL7V2ResourceLoaderImpl extends HL7V2ResourceLoader {
 			}
 		}
 		
-		List<ValueSetDefinition> listOfExternalVSD = packagingHandler.getExternalValueSets(testContext.getVocabularyLibrary().getXml());
-		ValueSetBindingsParserImpl valuesetBindingsParser = new ValueSetBindingsParserImpl();
-		ProfileModel profileModel = profileParser.parseEnhanced(testContext.getConformanceProfile().getXml(), testContext.getConformanceProfile().getSourceId()+"", null,
-				null,testContext.getVocabularyLibrary().getXml(),testContext.getValueSetBindings().getXml(), testContext.getCoConstraints().getXml(), testContext.getSlicings().getXml());
 		
-		for (ValueSetBinding vsb  : profileModel.getValueSetBinding()) {
+		//api keys
+		if(testContext.getVocabularyLibrary() != null && testContext.getValueSetBindings() != null) {
+			List<ValueSetDefinition> listOfExternalVSD = packagingHandler.getExternalValueSets(testContext.getVocabularyLibrary().getXml());
+			ValueSetBindingsParserImpl valuesetBindingsParser = new ValueSetBindingsParserImpl();
+			ProfileModel profileModel = profileParser.parseEnhanced(testContext.getConformanceProfile().getXml(), testContext.getConformanceProfile().getSourceId()+"", null,
+					null,testContext.getVocabularyLibrary().getXml(),testContext.getValueSetBindings().getXml(), null,null); //testContext.getCoConstraints().getXml(), testContext.getSlicings().getXml()
 			
-			for (Binding binding  : vsb.getBindingList()) {
-					Optional<ValueSetDefinition> matchedObject = listOfExternalVSD.stream()
-							  .filter(item -> item.getBindingIdentifier().equals(binding.getBindingIdentifier()))
-							  .findFirst();
-					if(matchedObject.isPresent()) {
-						testContext.getApikeys().add(new APIKey(matchedObject.get().getBindingIdentifier(),matchedObject.get().getUrl(),null));
-					}				
+			for (ValueSetBinding vsb  : profileModel.getValueSetBinding()) {
+				
+				for (Binding binding  : vsb.getBindingList()) {
+						Optional<ValueSetDefinition> matchedObject = listOfExternalVSD.stream()
+								  .filter(item -> item.getBindingIdentifier().equals(binding.getBindingIdentifier()))
+								  .findFirst();
+						if(matchedObject.isPresent()) {
+							testContext.getApikeys().add(new APIKey(matchedObject.get().getBindingIdentifier(),matchedObject.get().getUrl(),null));
+						}				
+				}
 			}
 		}
+		
 		
 		return testContext;
 	}
