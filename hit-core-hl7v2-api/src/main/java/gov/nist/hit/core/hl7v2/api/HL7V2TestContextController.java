@@ -12,19 +12,43 @@
 
 package gov.nist.hit.core.hl7v2.api;
 
+import java.security.Principal;
+import java.util.List;
+import java.util.Set;
+
+import javax.servlet.http.HttpServletRequest;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import gov.nist.hit.core.api.TestContextController;
+import gov.nist.hit.core.domain.ResourceType;
+import gov.nist.hit.core.domain.ResourceUploadAction;
+import gov.nist.hit.core.domain.ResourceUploadResult;
+import gov.nist.hit.core.domain.ResourceUploadStatus;
 import gov.nist.hit.core.domain.TestContext;
+import gov.nist.hit.core.domain.TestScope;
+import gov.nist.hit.core.hl7v2.domain.APIKey;
+import gov.nist.hit.core.hl7v2.domain.APIKeyCommand;
+import gov.nist.hit.core.hl7v2.domain.HL7V2TestContext;
 import gov.nist.hit.core.hl7v2.repo.HL7V2TestContextRepository;
 import gov.nist.hit.core.hl7v2.service.HL7V2MessageParser;
 import gov.nist.hit.core.hl7v2.service.HL7V2MessageValidator;
+import gov.nist.hit.core.hl7v2.service.HL7V2TestContextService;
 import gov.nist.hit.core.hl7v2.service.HL7V2ValidationReportConverter;
+import gov.nist.hit.core.service.AppInfoService;
+import gov.nist.hit.core.service.UserIdService;
+import gov.nist.hit.core.service.UserService;
 import gov.nist.hit.core.service.ValidationReportConverter;
+import gov.nist.hit.core.service.exception.MessageUploadException;
+import gov.nist.hit.core.service.exception.NoUserFoundException;
 import io.swagger.annotations.Api;
 
 /**
@@ -49,6 +73,12 @@ public class HL7V2TestContextController extends TestContextController {
 
   @Autowired
   private HL7V2ValidationReportConverter validationReportConverter;
+  
+  @Autowired
+	private AppInfoService appInfoService;
+  
+  @Autowired
+   private HL7V2TestContextService hL7V2TestContextService;
 
   @Override
   public TestContext getTestContext(Long testContextId) {
@@ -61,6 +91,7 @@ public class HL7V2TestContextController extends TestContextController {
     return testContextRepository;
   }
 
+  
   public void setTestContextRepository(HL7V2TestContextRepository testContextRepository) {
     this.testContextRepository = testContextRepository;
   }
@@ -88,7 +119,81 @@ public class HL7V2TestContextController extends TestContextController {
   public ValidationReportConverter getValidatioReportConverter() {
     return validationReportConverter;
   }
+  
+  @Autowired
+	private UserService userService;
 
+	@Autowired
+	private UserIdService userIdService;
+  
+  
 
+	@PreAuthorize("hasRole('tester')")
+	@RequestMapping(value = "/{testContextId}/apikey", method = RequestMethod.POST)
+	public ResourceUploadStatus updateTestContextApiKeys(HttpServletRequest request, @PathVariable("testContextId") Long testContextId, Principal p,
+			@RequestBody List<APIKeyCommand> apiKeyCommands)  {
+		
+		try {
+			checkManagementSupport();
+			HL7V2TestContext testContext = hL7V2TestContextService.findOne(testContextId);
+			checkPermission(testContextId, testContext, p);
+			
+			Set<APIKey> existingApiKeys = testContext.getApikeys();
+			List<APIKeyCommand> modifiedApiKeys = apiKeyCommands;
+	
+			boolean tcHasModifications =false;
+			for (APIKeyCommand key : modifiedApiKeys) {						
+					for(APIKey key2 : existingApiKeys) {
+						if (key.getId().equals(key2.getId()) && key.isEditBindingKey()) {
+							if (key.getBindingKey() ==null || key.getBindingKey().isEmpty()) {	
+								//remove key
+								key2.setBindingKey(null);
+								tcHasModifications = true;
+							}else {
+								key2.setBindingKey(key.getBindingKey());
+								tcHasModifications = true;
+							}
+						}
+					}							
+			}		
+			if (tcHasModifications) {
+				hL7V2TestContextService.save(testContext);
+			}
+									
+			
+			ResourceUploadStatus result = new ResourceUploadStatus();
+			result.setType(ResourceType.TESTCONTEXT);
+			result.setAction(ResourceUploadAction.UPDATE);
+			result.setId(testContext.getId());
+			result.setStatus(ResourceUploadResult.SUCCESS);
+			return result;
+		
+		} catch (Exception e) {
+			e.printStackTrace();	
+			return null;
+		}
+		
+	}
+
+	private void checkManagementSupport() throws Exception {
+		if (!appInfoService.get().isCbManagementSupported()) {
+			throw new Exception("This operation is not supported by this tool");
+		}
+	}
+	
+	private void checkPermission(Long id, TestContext testContext, Principal p) throws Exception {
+		String username = userIdService.getCurrentUserName(p);
+		if (username == null)
+			throw new NoUserFoundException("User could not be found");
+		if (testContext == null)
+			throw new Exception("No testcontext (" + id + ") found");
+		TestScope scope = testContext.getScope();
+		if (scope.equals(TestScope.GLOBAL) && !userService.hasGlobalAuthorities(username)) {
+			throw new NoUserFoundException("You do not have the permission to perform this task");
+		}
+		if (!username.equals(testContext.getAuthorUsername()) && !userService.isAdmin(username)) {
+			throw new NoUserFoundException("You do not have the permission to perform this task");
+		}
+	}
 
 }

@@ -196,7 +196,7 @@ public class CBManagementController {
 	@RequestMapping(value = "/testPlans/{testPlanId}/testStepsWithExternalValueSets", method = RequestMethod.GET, produces = "application/json")
 	public List<TestStep> testStepsWithExternalValueSets(@ApiParam(value = "the id of the test plan", required = true) @PathVariable final Long testPlanId, HttpServletRequest request,
 			HttpServletResponse response) throws Exception {
-		logger.info("Fetching  test case...");
+		logger.info("Fetching  test steps with external Values Sets...");
 		checkManagementSupport();
 		TestPlan testPlan = testPlanService.findOne(testPlanId);
 			List<TestStep> list = new ArrayList<TestStep>();
@@ -209,6 +209,8 @@ public class CBManagementController {
 			}
 		return list;
 	}
+	
+
 
 	@PreAuthorize("hasRole('tester')")
 	@RequestMapping(value = "/testPlans/{testPlanId}/testCases/{testCaseId}/delete", method = RequestMethod.POST, produces = "application/json")
