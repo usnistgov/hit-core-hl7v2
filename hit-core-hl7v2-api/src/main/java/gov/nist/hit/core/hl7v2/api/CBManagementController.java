@@ -52,6 +52,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import gov.nist.auth.hit.core.domain.Account;
 import gov.nist.hit.core.api.SessionContext;
 import gov.nist.hit.core.domain.AbstractTestCase;
+import gov.nist.hit.core.domain.CFTestPlan;
+import gov.nist.hit.core.domain.CFTestStep;
 import gov.nist.hit.core.domain.ResourceType;
 import gov.nist.hit.core.domain.ResourceUploadAction;
 import gov.nist.hit.core.domain.ResourceUploadResult;
@@ -174,9 +176,17 @@ public class CBManagementController {
 				username = account.getUsername();
 				String email = account.getEmail();
 				if (userService.isAdminByEmail(email) || userService.isAdmin(username)) {
-					results = testPlanService.findShortAllByStageAndScopeAndDomain(TestingStage.CB, scope, domain);
+					if (scope.equals(TestScope.GLOBALANDUSER)) {
+						results = testPlanService.findShortAllByStageAndDomain(TestingStage.CB, domain);
+					} else {
+						results = testPlanService.findShortAllByStageAndScopeAndDomain(TestingStage.CB, scope, domain);
+					}
 				} else {
-					results = testPlanService.findAllShortByStageAndUsernameAndScopeAndDomain(TestingStage.CB, username, scope, domain);
+					if (scope.equals(TestScope.GLOBALANDUSER)) {
+						results = testPlanService.findAllShortByStageAndUsernameAndDomain(TestingStage.CB, username, domain); 
+					} else {
+						results = testPlanService.findAllShortByStageAndUsernameAndScopeAndDomain(TestingStage.CB, username, scope, domain);
+					}
 				}
 			}
 		}
@@ -210,6 +220,109 @@ public class CBManagementController {
 		return list;
 	}
 	
+	
+	@RequestMapping(value = "/testStepsWithExternalValueSetsFromAllTestPlans", method = RequestMethod.GET, produces = "application/json")
+	public List<TestStep> gettestStepsWithExternalValueSetsFromAllTestPlans(
+			@ApiParam(value = "the scope of the test plans", required = false) @RequestParam(required = false) TestScope scope,
+			@ApiParam(value = "the domain of the test plans", required = true) @RequestParam(required = true) String domain, HttpServletRequest request,
+			HttpServletResponse response) {
+		try {
+			logger.info("Fetching  test steps with external Values Sets...");
+			checkManagementSupport();
+
+			List<TestPlan> testplanIds = null;
+			String username = null;
+			Long userId = SessionContext.getCurrentUserId(request.getSession(false));
+			if (userId != null) {
+				Account account = accountService.findOne(userId);
+				if (account != null) {
+					username = account.getUsername();
+					String email = account.getEmail();
+					if (userService.isAdminByEmail(email) || userService.isAdmin(username)) {
+						if (scope.equals(TestScope.GLOBALANDUSER)) {
+							testplanIds = testPlanService.findAllTestPlanIdsByDomain(domain);
+						} else {
+							testplanIds = testPlanService.findAllTestPlanIdsByScopeAndDomain(scope, domain);
+						}
+					} else {
+						if (scope.equals(TestScope.GLOBALANDUSER)) {
+							testplanIds = testPlanService.findAllTestPlanIdsByUsernameAndDomain(username, domain); 
+						} else {
+							testplanIds = testPlanService.findAllTestPlanIdsByScopeAndUsernameAndDomain(scope, username, domain);
+						}
+					}
+				}
+				List<TestStep> list = new ArrayList<TestStep>();
+
+				for (TestPlan testplan : testplanIds) {
+					
+					TestPlan testPlan = testPlanService.findOne(testplan.getId());
+					List<TestStep> stList = testPlan.getAllTestSteps();
+					for(TestStep ts : stList) {
+						HL7V2TestContext  tc = (HL7V2TestContext)ts.getTestContext();
+						if(!tc.getApikeys().isEmpty()) {
+							list.add(ts);
+						}
+					}
+					
+					
+//					List<TestStep> stList = testplan.getAllTestSteps();
+//					for (TestStep ts : stList) {
+//						HL7V2TestContext tc = (HL7V2TestContext) ts.getTestContext();
+//						if (!tc.getApikeys().isEmpty()) {
+//							list.add(ts);
+//						}
+//					}
+				}
+				return list;
+			}
+			return null;
+		
+		} catch (Exception e) {
+			return null;
+		}
+	}
+	
+	@RequestMapping(value = "/testPlanIds", method = RequestMethod.GET, produces = "application/json")
+	public List<TestPlan> getTestPlanIds(
+			@ApiParam(value = "the scope of the test plans", required = false) @RequestParam(required = false) TestScope scope,
+			@ApiParam(value = "the domain of the test plans", required = true) @RequestParam(required = true) String domain, HttpServletRequest request,
+			HttpServletResponse response) {
+		try {
+			logger.info("Fetching  test steps with external Values Sets...");
+			checkManagementSupport();
+
+			List<TestPlan> testplanIds = null;
+			String username = null;
+			Long userId = SessionContext.getCurrentUserId(request.getSession(false));
+			if (userId != null) {
+				Account account = accountService.findOne(userId);
+				if (account != null) {
+					username = account.getUsername();
+					String email = account.getEmail();
+					if (userService.isAdminByEmail(email) || userService.isAdmin(username)) {
+						if (scope.equals(TestScope.GLOBALANDUSER)) {
+							testplanIds = testPlanService.findAllTestPlanIdsByDomain(domain);
+						} else {
+							testplanIds = testPlanService.findAllTestPlanIdsByScopeAndDomain(scope, domain);
+						}
+					} else {
+						if (scope.equals(TestScope.GLOBALANDUSER)) {
+							testplanIds = testPlanService.findAllTestPlanIdsByUsernameAndDomain(username, domain); 
+						} else {
+							testplanIds = testPlanService.findAllTestPlanIdsByScopeAndUsernameAndDomain(scope, username, domain);
+						}
+					}
+				}
+				
+				}
+				return testplanIds;
+				
+		
+		} catch (Exception e) {
+			return null;
+		}
+	}
 
 
 	@PreAuthorize("hasRole('tester')")

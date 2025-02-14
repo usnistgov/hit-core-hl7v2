@@ -6,7 +6,7 @@ import java.util.Set;
 
 import org.w3c.dom.Document;
 
-import gov.nist.hit.core.domain.UploadedProfileModel;
+import gov.nist.hit.core.hl7v2.domain.UploadedProfileModel;
 
 public interface PackagingHandler {
 

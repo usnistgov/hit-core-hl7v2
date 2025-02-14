@@ -9,6 +9,8 @@ import javax.persistence.Id;
 import javax.persistence.Transient;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
@@ -26,8 +28,11 @@ public class APIKey implements Serializable {
 
 	private String bindingUrl;
 
-	@JsonIgnore
+	@JsonProperty(access = Access.WRITE_ONLY)
 	private String bindingKey;
+	
+	//has an edit
+	private boolean editBindingKey;
 		
 	@Transient
 	@JsonSerialize
@@ -69,6 +74,7 @@ public class APIKey implements Serializable {
 		this.bindingUrl = bindingUrl;
 	}
 
+	@JsonIgnore
 	public String getBindingKey() {
 		return bindingKey;
 	}
@@ -87,6 +93,14 @@ public class APIKey implements Serializable {
 
 	public void setHasBindingKey(Boolean hasBindingKey) {
 		this.hasBindingKey = hasBindingKey;
+	}
+	
+	public boolean isEditBindingKey() {
+		return editBindingKey;
+	}
+
+	public void setEditBindingKey(boolean editBindingKey) {
+		this.editBindingKey = editBindingKey;
 	}
 
 	

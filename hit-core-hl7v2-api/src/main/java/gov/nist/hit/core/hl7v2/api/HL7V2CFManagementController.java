@@ -71,14 +71,15 @@ import gov.nist.hit.core.domain.CFTestStepGroup;
 import gov.nist.hit.core.domain.GVTSaveInstance;
 import gov.nist.hit.core.domain.Message;
 import gov.nist.hit.core.domain.ResourceUploadResult;
-import gov.nist.hit.core.domain.TestCaseWrapper;
 import gov.nist.hit.core.domain.TestContext;
 import gov.nist.hit.core.domain.TestScope;
 import gov.nist.hit.core.domain.UploadStatus;
-import gov.nist.hit.core.domain.UploadedProfileModel;
 import gov.nist.hit.core.domain.ValueSetDefinition;
 import gov.nist.hit.core.hl7v2.domain.APIKey;
+import gov.nist.hit.core.hl7v2.domain.APIKeyCommand;
 import gov.nist.hit.core.hl7v2.domain.HL7V2TestContext;
+import gov.nist.hit.core.hl7v2.domain.TestCaseWrapper;
+import gov.nist.hit.core.hl7v2.domain.UploadedProfileModel;
 import gov.nist.hit.core.hl7v2.service.FileValidationHandler;
 import gov.nist.hit.core.hl7v2.service.PackagingHandler;
 import gov.nist.hit.core.hl7v2.service.impl.FileValidationHandlerImpl.InvalidFileTypeException;
@@ -885,7 +886,9 @@ public class HL7V2CFManagementController {
 	            message.setContent(model.getExampleMessage());
 	          }
 	          
-	          //deal with external vs and api keys
+	         
+	          
+	          //new steps 
 	          if (model.getExternalVS() != null) {
 	        	  for(ValueSetDefinition vsd : model.getExternalVS()) {
 	        		  if (vsd.getApiKey() != null) {
@@ -906,7 +909,27 @@ public class HL7V2CFManagementController {
 	        			  }
 	        		  }	        			  	         		
 	        	  }
+	          }else
+	          //update step and  deal with external vs and api keys
+	          if (model.getApikeys() != null) {
+	        	  HL7V2TestContext tc = (HL7V2TestContext) found.getTestContext();	 
+	        	  for(APIKey wrapperKey : model.getApikeys()) {
+	        		  for(APIKey key: tc.getApikeys()) {
+	        			  if (wrapperKey.getId().equals(key.getId()) && wrapperKey.isEditBindingKey()) {
+	        				  if (wrapperKey.getBindingKey() ==null || wrapperKey.getBindingKey().isEmpty()) {	
+	        					  key.setBindingKey(null);
+	        				  }else {
+	  							key.setBindingKey(wrapperKey.getBindingKey());
+							}
+	        				 
+	        			  }
+	        		  }	        		  	        		
+	        	  }
+	        	  
+	        		        	
+	        	  
 	          }
+	          
 	        }
 	      }
 	    }

@@ -54,14 +54,17 @@ import gov.nist.hit.core.domain.ResourceType;
 import gov.nist.hit.core.domain.ResourceUploadAction;
 import gov.nist.hit.core.domain.ResourceUploadResult;
 import gov.nist.hit.core.domain.ResourceUploadStatus;
+import gov.nist.hit.core.domain.TestPlan;
 import gov.nist.hit.core.domain.TestScope;
-import gov.nist.hit.core.domain.UploadedProfileModel;
+import gov.nist.hit.core.domain.TestStep;
 import gov.nist.hit.core.domain.ValueSetDefinition;
 import gov.nist.hit.core.domain.valuesetbindings.Binding;
 import gov.nist.hit.core.domain.valuesetbindings.ValueSetBinding;
 import gov.nist.hit.core.hl7v2.domain.APIKey;
 import gov.nist.hit.core.hl7v2.domain.HL7V2TestContext;
+import gov.nist.hit.core.hl7v2.domain.UploadedProfileModel;
 import gov.nist.hit.core.hl7v2.service.HL7V2ProfileParser;
+import gov.nist.hit.core.hl7v2.service.HL7V2TestContextService;
 import gov.nist.hit.core.hl7v2.service.impl.HL7V2ProfileParserImpl;
 import gov.nist.hit.core.hl7v2.service.impl.PackagingHandlerImpl;
 import gov.nist.hit.core.service.AccountService;
@@ -129,6 +132,9 @@ public class CFManagementController {
   
   @Autowired
   private PackagingHandlerImpl packagingHandlerImpl;
+  
+  @Autowired
+  private HL7V2TestContextService hL7V2TestContextService;
 
   private void checkManagementSupport() throws Exception {
     if (!appInfoService.get().isCfManagementSupported()) {
@@ -835,46 +841,51 @@ public class CFManagementController {
             model.setExampleMessage(message.getContent());
           }
         }
-            
+        
+        HL7V2TestContext hl7v2TC = hL7V2TestContextService.findOne(step.getTestContext().getId());
+        model.setApikeys(hl7v2TC.getApikeys());
         
         
-        HL7V2TestContext tc = (HL7V2TestContext)step.getTestContext();       	           
-		List<ValueSetDefinition> listOfExternalVSD =   packagingHandlerImpl.getExternalValueSets(tc.getVocabularyLibrary().getXml());
-		List<ValueSetDefinition> externalVS = new ArrayList<ValueSetDefinition>();
-		ProfileModel profileModel;
-		if (listOfExternalVSD.size()> 0 && tc.getValueSetBindings()!= null) {
-			try {
-				//maybe not parse the whole thing? tbd
-				HL7V2ProfileParser profileParser = new HL7V2ProfileParserImpl();
-				profileModel = profileParser.parseEnhanced(tc.getConformanceProfile().getXml(), tc.getConformanceProfile().getSourceId()+"", null,
-						null,tc.getVocabularyLibrary().getXml(),tc.getValueSetBindings().getXml(), tc.getCoConstraints().getXml(), tc.getSlicings().getXml());
-				
-				for (ValueSetBinding vsb  : profileModel.getValueSetBinding()) {
-					
-					for (Binding binding  : vsb.getBindingList()) {
-							Optional<ValueSetDefinition> matchedObject = listOfExternalVSD.stream()
-									  .filter(item -> item.getBindingIdentifier().equals(binding.getBindingIdentifier()))
-									  .findFirst();
-							if(matchedObject.isPresent()) {
-								
-								ValueSetDefinition vsd = matchedObject.get();
-								for(APIKey key : tc.getApikeys()) {
-									if (vsd.getBindingIdentifier().equals(key.getBindingIdentifier()) && key.getBindingKey() != null && !key.getBindingKey().isEmpty()) {
-										//this valueset has a key defined.
-										vsd.setApiKey("***");
-									}
-								}								
-								externalVS.add(vsd);
-							}				
-					}
-				}
-				if (tc != null && tc.getApikeys().size() >0) {
-			    	   model.setExternalValueSets(externalVS);
-			    }
-			}catch (ProfileParserException e) {
-				e.printStackTrace();
-			}
-		}
+        
+//        HL7V2TestContext tc = (HL7V2TestContext)step.getTestContext();       	           
+//		List<ValueSetDefinition> listOfExternalVSD =   packagingHandlerImpl.getExternalValueSets(tc.getVocabularyLibrary().getXml());
+//		List<ValueSetDefinition> externalVS = new ArrayList<ValueSetDefinition>();
+//		ProfileModel profileModel;
+//		if (listOfExternalVSD.size()> 0 && tc.getValueSetBindings()!= null) {
+//			try {
+//				//maybe not parse the whole thing? tbd
+//				HL7V2ProfileParser profileParser = new HL7V2ProfileParserImpl();
+//				profileModel = profileParser.parseEnhanced(tc.getConformanceProfile().getXml(), tc.getConformanceProfile().getSourceId()+"", null,
+//						null,tc.getVocabularyLibrary().getXml(),tc.getValueSetBindings().getXml(), tc.getCoConstraints().getXml(), tc.getSlicings().getXml());
+//				
+//				for (ValueSetBinding vsb  : profileModel.getValueSetBinding()) {
+//					
+//					for (Binding binding  : vsb.getBindingList()) {
+//							Optional<ValueSetDefinition> matchedObject = listOfExternalVSD.stream()
+//									  .filter(item -> item.getBindingIdentifier().equals(binding.getBindingIdentifier()))
+//									  .findFirst();
+//							if(matchedObject.isPresent()) {
+//								
+//								ValueSetDefinition vsd = matchedObject.get();
+//								
+//								for(APIKey key : tc.getApikeys()) {
+//									if (vsd.getBindingIdentifier().equals(key.getBindingIdentifier()) && key.getBindingKey() != null && !key.getBindingKey().isEmpty()) {
+//										//this valueset has a key defined.
+//										vsd.setApiKey("***");
+//									}
+//								}
+//								
+//								externalVS.add(vsd);
+//							}				
+//					}
+//				}
+//				if (tc != null && tc.getApikeys().size() >0) {
+//			    	   model.setExternalValueSets(externalVS);
+//			    }
+//			}catch (ProfileParserException e) {
+//				e.printStackTrace();
+//			}
+//		}
 		
 		
        
@@ -909,6 +920,9 @@ public class CFManagementController {
             model.setExampleMessage(message.getContent());
           }
         }
+        
+        HL7V2TestContext hl7v2TC = hL7V2TestContextService.findOne(step.getTestContext().getId());
+        model.setApikeys(hl7v2TC.getApikeys());
         models.add(model);
       }
       return models;
@@ -926,6 +940,76 @@ public class CFManagementController {
     CFTestPlan testPlan = testPlanService.findOne(testPlanId);
     return testPlan;
   }
+  
+  @RequestMapping(value = "/testPlans/{testPlanId}/testStepsWithExternalValueSets", method = RequestMethod.GET, produces = "application/json")
+	public List<CFTestStep> testStepsWithExternalValueSets(@ApiParam(value = "the id of the test plan", required = true) @PathVariable final Long testPlanId, HttpServletRequest request,
+			HttpServletResponse response) throws Exception {
+		logger.info("Fetching  test steps with external Values Sets...");
+		checkManagementSupport();
+		CFTestPlan testPlan = testPlanService.findOne(testPlanId);
+			List<CFTestStep> list = new ArrayList<CFTestStep>();
+			List<CFTestStep> stList = testPlan.getAllTestSteps();
+			for(CFTestStep ts : stList) {
+				HL7V2TestContext  tc = (HL7V2TestContext)ts.getTestContext();
+				if(!tc.getApikeys().isEmpty()) {
+					list.add(ts);
+				}
+			}
+		return list;
+	}
+  
+	@RequestMapping(value = "/testStepsWithExternalValueSetsFromAllTestPlans", method = RequestMethod.GET, produces = "application/json")
+	public List<CFTestStep> gettestStepsWithExternalValueSetsFromAllTestPlans(
+			@ApiParam(value = "the scope of the test plans", required = false) @RequestParam(required = false) TestScope scope,
+			@ApiParam(value = "the domain of the test plans", required = true) @RequestParam(required = true) String domain, HttpServletRequest request,
+			HttpServletResponse response) {
+		try {
+			logger.info("Fetching  test steps with external Values Sets...");
+			checkManagementSupport();
+
+			List<CFTestPlan> results = null;
+			String username = null;
+			Long userId = SessionContext.getCurrentUserId(request.getSession(false));
+			if (userId != null) {
+				Account account = accountService.findOne(userId);
+				if (account != null) {
+					username = account.getUsername();
+					String email = account.getEmail();
+					if (userService.isAdminByEmail(email) || userService.isAdmin(username)) {
+						if (scope.equals(TestScope.GLOBALANDUSER)) {
+							results = testPlanService.findAllByDomain(domain);
+						} else {
+							results = testPlanService.findAllByScopeAndDomain(scope, domain);
+						}
+					} else {
+						if (scope.equals(TestScope.GLOBALANDUSER)) {
+							results = testPlanService.findAllByUsernameAndDomain(username, domain);
+						} else {
+							results = testPlanService.findAllByScopeAndUsernameAndDomain(scope, username, domain);
+						}
+					}
+				}
+				List<CFTestStep> list = new ArrayList<CFTestStep>();
+
+				for (CFTestPlan testplan : results) {
+					List<CFTestStep> stList = testplan.getAllTestSteps();
+					for (CFTestStep ts : stList) {
+						HL7V2TestContext tc = (HL7V2TestContext) ts.getTestContext();
+						if (!tc.getApikeys().isEmpty()) {
+							list.add(ts);
+						}
+					}
+				}
+				return list;
+			}
+			return null;
+		
+		} catch (Exception e) {
+			return null;
+		}
+	}
+  
+  
 
 
   // @PreAuthorize("hasRole('tester')")
