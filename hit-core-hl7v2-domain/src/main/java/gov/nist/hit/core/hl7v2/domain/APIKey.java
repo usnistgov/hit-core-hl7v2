@@ -32,6 +32,7 @@ public class APIKey implements Serializable {
 	private String bindingKey;
 	
 	//has an edit
+	@Transient
 	private boolean editBindingKey;
 		
 	@Transient

@@ -57,6 +57,7 @@ import gov.nist.hit.core.domain.ResourceUploadStatus;
 import gov.nist.hit.core.domain.TestPlan;
 import gov.nist.hit.core.domain.TestScope;
 import gov.nist.hit.core.domain.TestStep;
+import gov.nist.hit.core.domain.TestingStage;
 import gov.nist.hit.core.domain.ValueSetDefinition;
 import gov.nist.hit.core.domain.valuesetbindings.Binding;
 import gov.nist.hit.core.domain.valuesetbindings.ValueSetBinding;
@@ -173,11 +174,27 @@ public class CFManagementController {
 			if (account != null) {
 				username = account.getUsername();
 				String email = account.getEmail();
+				
 				if (userService.isAdminByEmail(email) || userService.isAdmin(username)) {
-					results = testPlanService.findShortAllByScopeAndDomain(scope, domain);
+					if (scope.equals(TestScope.GLOBALANDUSER)) {
+						results = testPlanService.findShortAllByDomain(domain);
+					} else {
+						results = testPlanService.findShortAllByScopeAndDomain(scope, domain);
+					}
 				} else {
-					results = testPlanService.findShortAllByScopeAndUsernameAndDomain(scope, username, domain);
+					if (scope.equals(TestScope.GLOBALANDUSER)) {
+						results = testPlanService.findShortAllByUsernameAndDomain(username, domain);
+					} else {
+						results = testPlanService.findShortAllByScopeAndUsernameAndDomain(scope, username, domain);
+					}
 				}
+				
+				
+//				if (userService.isAdminByEmail(email) || userService.isAdmin(username)) {
+//					results = testPlanService.findShortAllByScopeAndDomain(scope, domain);
+//				} else {
+//					results = testPlanService.findShortAllByScopeAndUsernameAndDomain(scope, username, domain);
+//				}
 			}
 		}
 		return results;
