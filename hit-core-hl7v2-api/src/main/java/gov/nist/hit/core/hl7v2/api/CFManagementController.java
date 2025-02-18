@@ -968,7 +968,7 @@ public class CFManagementController {
 			List<CFTestStep> stList = testPlan.getAllTestSteps();
 			for(CFTestStep ts : stList) {
 				HL7V2TestContext  tc = (HL7V2TestContext)ts.getTestContext();
-				if(!tc.getApikeys().isEmpty()) {
+				if(tc !=null && tc.getApikeys() !=null && !tc.getApikeys().isEmpty()) {
 					list.add(ts);
 				}
 			}

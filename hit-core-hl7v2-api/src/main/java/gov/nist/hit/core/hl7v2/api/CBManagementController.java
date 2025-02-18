@@ -213,7 +213,7 @@ public class CBManagementController {
 			List<TestStep> stList = testPlan.getAllTestSteps();
 			for(TestStep ts : stList) {
 				HL7V2TestContext  tc = (HL7V2TestContext)ts.getTestContext();
-				if(!tc.getApikeys().isEmpty()) {
+				if(tc !=null && tc.getApikeys() !=null && !tc.getApikeys().isEmpty()) {
 					list.add(ts);
 				}
 			}
