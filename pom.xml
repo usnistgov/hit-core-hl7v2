@@ -20,7 +20,7 @@
 		<resourcesValidation.version>1.0.1</resourcesValidation.version>
 		<hl7v2Validation.version>1.7.0-SNAPSHOT</hl7v2Validation.version>
 		<hl7v2Validationutils.version>1.0.0</hl7v2Validationutils.version>
-		<unifiedreport.version>1.0.12-SNAPSHOT</unifiedreport.version>
+		<unifiedreport.version>1.1.0-SNAPSHOT</unifiedreport.version>
 	</properties>
 
 	<dependencies>
