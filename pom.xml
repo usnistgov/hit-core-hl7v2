@@ -20,7 +20,7 @@
 		<resourcesValidation.version>1.0.1</resourcesValidation.version>
 		<hl7v2Validation.version>1.7.0-SNAPSHOT</hl7v2Validation.version>
 		<hl7v2Validationutils.version>1.0.0</hl7v2Validationutils.version>
-		<unifiedreport.version>1.0.11-SNAPSHOT</unifiedreport.version>
+		<unifiedreport.version>1.0.12-SNAPSHOT</unifiedreport.version>
 	</properties>
 
 	<dependencies>
@@ -52,20 +52,16 @@
 		</dependency>
 
 		<dependency>
-            <groupId>gov.nist</groupId>
-            <artifactId>hl7-v2-validation</artifactId>
-            <version>${hl7v2Validation.version}</version>
-        </dependency>
+			<groupId>org.scala-lang</groupId>
+			<artifactId>scala-library</artifactId>
+			<version>2.13.10</version>
+		</dependency>
+
         <dependency>
             <groupId>gov.nist.healthcare.hl7.v2.unifiedreport</groupId>
             <artifactId>validation-proxy</artifactId>
             <version>${unifiedreport.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>gov.nist.healthcare.hl7.v2.unifiedreport</groupId>
-            <artifactId>report-filter</artifactId>
-            <version>${unifiedreport.version}</version>
-        </dependency>
+        </dependency>                
         
 		<dependency>
 			<groupId>gov.nist.healthcare.resources</groupId>

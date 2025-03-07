@@ -110,6 +110,14 @@ public abstract class HL7V2MessageValidator implements MessageValidator {
 				String c1 = v2TestContext.getConstraints() != null ? v2TestContext.getConstraints().getXml() : null;
 				String c2 = v2TestContext.getAddditionalConstraints() != null
 						? v2TestContext.getAddditionalConstraints().getXml() : null;
+				
+				
+				//for external validation
+//				List<String> constraintList = new ArrayList<String>();
+//				constraintList.add(c1);
+//				constraintList.add(c2);
+				
+				
 				InputStream c1Stream = c1 != null ? IOUtils.toInputStream(c1, StandardCharsets.UTF_8) : null;
 				InputStream c1Stream_2 = c1 != null ? IOUtils.toInputStream(c1, StandardCharsets.UTF_8) : null;
 				InputStream c2Stream = c2 != null ? IOUtils.toInputStream(c2, StandardCharsets.UTF_8) : null;
@@ -176,7 +184,20 @@ public abstract class HL7V2MessageValidator implements MessageValidator {
 						}).build();
 				
 					
-				if (configuration != null) {					
+				if (configuration != null) {			
+					
+//						call external service
+//						report = vp.validateExternal(message,
+//							v2TestContext.getConformanceProfile().getXml(),
+//							v2TestContext.getVocabularyLibrary().getXml(),
+//							constraintList,
+//							v2TestContext.getValueSetBindings().getXml(),
+//							v2TestContext.getCoConstraints().getXml(),
+//							v2TestContext.getSlicings().getXml(),
+//							conformanceProfielId,
+//							Context.valueOf(contextType),
+//							configuration,httpClient);
+					
 						report = vp.validateNew(message,
 								v2TestContext.getConformanceProfile().getXml(),
 								valueSetLibraryIS,
@@ -190,6 +211,19 @@ public abstract class HL7V2MessageValidator implements MessageValidator {
 												
 					HITStatsLogger.log(username, organization, operation, testContext.getDomain());					
 				}else {
+					
+//						call external service
+//						report = vp.validateExternal(message,
+//							v2TestContext.getConformanceProfile().getXml(),
+//							v2TestContext.getVocabularyLibrary().getXml(),
+//							constraintList,
+//							v2TestContext.getValueSetBindings().getXml(),
+//							v2TestContext.getCoConstraints().getXml(),
+//							v2TestContext.getSlicings().getXml(),
+//							conformanceProfielId,
+//							Context.valueOf(contextType),
+//							configuration,httpClient);
+					
 						report = vp.validateNew(message,
 								v2TestContext.getConformanceProfile().getXml(),
 								valueSetLibraryIS,

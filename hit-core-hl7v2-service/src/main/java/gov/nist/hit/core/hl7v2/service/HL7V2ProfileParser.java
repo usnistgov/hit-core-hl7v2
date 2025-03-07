@@ -48,7 +48,7 @@ import gov.nist.hit.core.domain.singlecodebindings.SingleCodeBinding;
 import gov.nist.hit.core.domain.singlecodebindings.SingleCodeBindings;
 import gov.nist.hit.core.domain.valuesetbindings.ValueSetBinding;
 import gov.nist.hit.core.domain.valuesetbindings.ValueSetBindings;
-import gov.nist.hit.core.hl7v2.domain.util.Util;
+import gov.nist.hit.core.hl7v2.service.util.Util;
 import gov.nist.hit.core.service.ProfileParser;
 import gov.nist.hit.core.service.ValueSetLibrarySerializer;
 import gov.nist.hit.core.service.exception.ProfileParserException;
@@ -135,7 +135,6 @@ public abstract class HL7V2ProfileParser extends ProfileParser {
 	
 	
 	
-	//TODO: add table information in segment and datatype 
 	@Override
 	public ProfileModel parseEnhanced(Object conformanceProfile, String constraintsXml,String additionalConstraintsXml,
 			String valueSetsXml, String valueSetBindingsXml, String coConstraints,String slicings) throws ProfileParserException {

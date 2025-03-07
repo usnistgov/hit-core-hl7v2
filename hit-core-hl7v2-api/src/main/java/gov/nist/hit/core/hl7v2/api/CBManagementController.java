@@ -205,7 +205,8 @@ public class CBManagementController {
 	
 	@RequestMapping(value = "/testPlans/{testPlanId}/testStepsWithExternalValueSets", method = RequestMethod.GET, produces = "application/json")
 	public List<TestStep> testStepsWithExternalValueSets(@ApiParam(value = "the id of the test plan", required = true) @PathVariable final Long testPlanId, HttpServletRequest request,
-			HttpServletResponse response) throws Exception {
+			HttpServletResponse response) {
+		try {
 		logger.info("Fetching  test steps with external Values Sets...");
 		checkManagementSupport();
 		TestPlan testPlan = testPlanService.findOne(testPlanId);
@@ -218,6 +219,11 @@ public class CBManagementController {
 				}
 			}
 		return list;
+		}catch(Exception e) {
+			System.out.println(e);
+			return null;
+		}
+		
 	}
 	
 	
