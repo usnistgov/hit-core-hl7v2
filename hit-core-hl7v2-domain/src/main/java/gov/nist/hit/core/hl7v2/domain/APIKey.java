@@ -33,6 +33,7 @@ public class APIKey implements Serializable {
 	
 	//has an edit
 	@Transient
+	@JsonProperty(access = Access.READ_WRITE)
 	private boolean editBindingKey;
 		
 	@Transient

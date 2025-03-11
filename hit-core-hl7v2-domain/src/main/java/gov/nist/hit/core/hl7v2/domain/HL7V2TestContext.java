@@ -1,5 +1,6 @@
 package gov.nist.hit.core.hl7v2.domain;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -72,6 +73,8 @@ public class HL7V2TestContext extends TestContext {
 	      inverseJoinColumns = {@JoinColumn(name = "apikey_id", referencedColumnName = "id")})
     @JsonView(Views.NoData.class)
     private Set<APIKey> apikeys = new HashSet<APIKey>();
+	
+	private String hl7v2ValidationVersion;
 
 	public HL7V2TestContext() {
 		this.format = "hl7v2";
@@ -167,5 +170,21 @@ public class HL7V2TestContext extends TestContext {
 		return null;
 	}
 
+	public HashMap<String,String> getApiHashMap(){
+		HashMap<String,String> map = new HashMap<String, String>();
+		for(APIKey api: apikeys) {
+			map.put(api.getBindingIdentifier(), api.getBindingKey());
+		}
+		return map;
+	}
+
+	public String getHl7v2ValidationVersion() {
+		return hl7v2ValidationVersion;
+	}
+
+	public void setHl7v2ValidationVersion(String hl7v2ValidationVersion) {
+		this.hl7v2ValidationVersion = hl7v2ValidationVersion;
+	}
+	
 	
 }
