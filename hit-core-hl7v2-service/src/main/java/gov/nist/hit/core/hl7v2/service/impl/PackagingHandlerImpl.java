@@ -58,8 +58,11 @@ public class PackagingHandlerImpl implements PackagingHandler {
 	@Override
 	public List<UploadedProfileModel> getUploadedProfiles(String profileXML, String valueSetXML, String valueSetBindingsXML) {
 		
-		
-		List<ValueSetDefinition> listOfExternalVSD = this.getExternalValueSets(valueSetXML);
+		List<ValueSetDefinition> listOfExternalVSD = new ArrayList<ValueSetDefinition>();
+		if (valueSetXML != null) {
+			listOfExternalVSD = this.getExternalValueSets(valueSetXML);
+
+		}
 		
 		Document profileDoc = this.toDoc(profileXML);
 		NodeList nodes = profileDoc.getElementsByTagName("Message");
@@ -77,31 +80,33 @@ public class PackagingHandlerImpl implements PackagingHandler {
 			upm.setDescription(elmIntegrationProfile.getAttribute("Description"));
 			
 						
-			
-			HL7V2ProfileParser profileParser = new HL7V2ProfileParserImpl();
-			ProfileModel profileModel;
-			try {
-				profileModel = profileParser.parseEnhanced(profileXML, elmIntegrationProfile.getAttribute("ID"), null,
-						null,valueSetXML,valueSetBindingsXML, null, null);
-				
-				List<ValueSetDefinition> externalVS = new ArrayList<ValueSetDefinition>();
-				for (ValueSetBinding vsb  : profileModel.getValueSetBinding()) {
+			if (valueSetXML != null && valueSetBindingsXML != null) {
+				HL7V2ProfileParser profileParser = new HL7V2ProfileParserImpl();
+				ProfileModel profileModel;
+				try {
+					profileModel = profileParser.parseEnhanced(profileXML, elmIntegrationProfile.getAttribute("ID"), null,
+							null,valueSetXML,valueSetBindingsXML, null, null);
 					
-					for (Binding binding  : vsb.getBindingList()) {
-							Optional<ValueSetDefinition> matchedObject = listOfExternalVSD.stream()
-									  .filter(item -> item.getBindingIdentifier().equals(binding.getBindingIdentifier()))
-									  .findFirst();
-							if(matchedObject.isPresent()) {
-								externalVS.add(matchedObject.get());
-							}				
+					List<ValueSetDefinition> externalVS = new ArrayList<ValueSetDefinition>();
+					for (ValueSetBinding vsb  : profileModel.getValueSetBinding()) {
+						
+						for (Binding binding  : vsb.getBindingList()) {
+								Optional<ValueSetDefinition> matchedObject = listOfExternalVSD.stream()
+										  .filter(item -> item.getBindingIdentifier().equals(binding.getBindingIdentifier()))
+										  .findFirst();
+								if(matchedObject.isPresent()) {
+									externalVS.add(matchedObject.get());
+								}				
+						}
 					}
+					upm.setExternalValueSets(externalVS);
+					
+				} catch (ProfileParserException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
 				}
-				upm.setExternalValueSets(externalVS);
-				
-			} catch (ProfileParserException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
 			}
+			
 			
 						
 			if (cachedRepository.getCachedProfiles().containsKey(elmIntegrationProfile.getAttribute("ID"))) {

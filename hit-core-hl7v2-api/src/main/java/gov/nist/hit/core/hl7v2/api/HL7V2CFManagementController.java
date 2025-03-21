@@ -76,7 +76,6 @@ import gov.nist.hit.core.domain.TestScope;
 import gov.nist.hit.core.domain.UploadStatus;
 import gov.nist.hit.core.domain.ValueSetDefinition;
 import gov.nist.hit.core.hl7v2.domain.APIKey;
-import gov.nist.hit.core.hl7v2.domain.APIKeyCommand;
 import gov.nist.hit.core.hl7v2.domain.HL7V2TestContext;
 import gov.nist.hit.core.hl7v2.domain.TestCaseWrapper;
 import gov.nist.hit.core.hl7v2.domain.UploadedProfileModel;
@@ -284,9 +283,9 @@ public class HL7V2CFManagementController {
 
 		
 			//TODO get profile list when validation is done.
-//			List<UploadedProfileModel> list = packagingHandler.getUploadedProfiles(content);
+			List<UploadedProfileModel> list = packagingHandler.getUploadedProfiles(content,null,null);
 			resultMap.put("success", true);
-//			resultMap.put("profiles", list);
+			resultMap.put("profiles", list);
 					
 
 			return resultMap;
@@ -966,13 +965,15 @@ public class HL7V2CFManagementController {
 	            ts.put("exampleMessage", upm.getExampleMessage());
 	          }
 	          JSONArray externalVSKeysArray = new JSONArray();
-	          for ( ValueSetDefinition exvs : upm.getExternalVS()) {
-	        	  JSONObject ex = new JSONObject();
-	        	  ex.put("bindingIdentifier", exvs.getBindingIdentifier());
-	        	  ex.put("url",exvs.getUrl());
-	        	  ex.put("key",exvs.getApiKey());
-	        	  externalVSKeysArray.put(ex);
-	          }	          
+	          if (upm.getExternalVS() != null) {
+	        	  for ( ValueSetDefinition exvs : upm.getExternalVS()) {
+		        	  JSONObject ex = new JSONObject();
+		        	  ex.put("bindingIdentifier", exvs.getBindingIdentifier());
+		        	  ex.put("url",exvs.getUrl());
+		        	  ex.put("key",exvs.getApiKey());
+		        	  externalVSKeysArray.put(ex);
+		          }	 
+	          }	                  
 	          ts.put("externalValueSetKeys",externalVSKeysArray);
 	          testStepArray.put(ts);
 	        }

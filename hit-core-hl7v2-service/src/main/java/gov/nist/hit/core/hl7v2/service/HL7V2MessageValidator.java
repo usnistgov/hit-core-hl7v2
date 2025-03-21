@@ -11,29 +11,13 @@
  */
 package gov.nist.hit.core.hl7v2.service;
 
-import java.io.IOException;
 import java.io.InputStream;
-import java.io.Reader;
-import java.io.StringReader;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.io.IOUtils;
-import org.apache.http.HttpException;
-import org.apache.http.HttpRequest;
-import org.apache.http.HttpRequestInterceptor;
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.conn.ssl.NoopHostnameVerifier;
-import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.protocol.HttpContext;
-import org.apache.http.ssl.SSLContextBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import gov.nist.auth.hit.core.domain.Account;
 import gov.nist.healthcare.unified.enums.Context;
 import gov.nist.healthcare.unified.model.EnhancedReport;
 import gov.nist.healthcare.unified.proxy.ValidationProxy;
@@ -53,7 +37,6 @@ import hl7.v2.validation.content.ConformanceContext;
 import hl7.v2.validation.content.DefaultConformanceContext;
 import hl7.v2.validation.vs.ValueSetLibrary;
 import hl7.v2.validation.vs.ValueSetLibraryImpl;
-import hl7.v2.validation.vs.external.client.ExternalValueSetClient;
 
 public abstract class HL7V2MessageValidator implements MessageValidator {
 
@@ -206,9 +189,9 @@ public abstract class HL7V2MessageValidator implements MessageValidator {
 							v2TestContext.getConformanceProfile().getXml(),
 							v2TestContext.getVocabularyLibrary().getXml(),
 							constraintList,
-							v2TestContext.getValueSetBindings().getXml(),
-							v2TestContext.getCoConstraints().getXml(),
-							v2TestContext.getSlicings().getXml(),
+							v2TestContext.getValueSetBindings() != null ? v2TestContext.getValueSetBindings().getXml() : null,
+							v2TestContext.getCoConstraints() != null ? v2TestContext.getCoConstraints().getXml() : null,
+							v2TestContext.getSlicings() != null ? v2TestContext.getSlicings().getXml() : null,
 							conformanceProfielId,
 							Context.valueOf(contextType),
 							conf,
