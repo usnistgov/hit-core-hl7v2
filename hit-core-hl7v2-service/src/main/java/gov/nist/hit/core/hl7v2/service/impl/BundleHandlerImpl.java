@@ -412,32 +412,63 @@ public class BundleHandlerImpl implements BundleHandler {
 
 	@Override
 	public String getProfileContentFromZipDirectory(String dir) throws IOException {
-		return FileUtils.readFileToString(findFileDirectory(dir, "Profile.xml"));
+		File f = findFileDirectory(dir, "Profile.xml");
+		if (f != null) {
+			return FileUtils.readFileToString(findFileDirectory(dir, "Profile.xml"));
+		}else {
+			return null;
+		}	
 	}
 
 	@Override
 	public String getValueSetContentFromZipDirectory(String dir) throws IOException {
-		return FileUtils.readFileToString(findFileDirectory(dir, "ValueSets.xml"));
+		File f = findFileDirectory(dir, "ValueSets.xml");
+		if (f != null) {
+			return FileUtils.readFileToString(findFileDirectory(dir, "ValueSets.xml"));
+		}else {
+			return null;
+		}	
 	}
 
 	@Override
 	public String getConstraintContentFromZipDirectory(String dir) throws IOException {
-		return FileUtils.readFileToString(findFileDirectory(dir, "Constraints.xml"));
+		File f = findFileDirectory(dir, "Constraints.xml");
+		if (f != null) {
+			return FileUtils.readFileToString(findFileDirectory(dir, "Constraints.xml"));
+		}else {
+			return null;
+		}	
 	}
 	
 	@Override
 	public String getCoConstraintContentFromZipDirectory(String dir) throws IOException {
-		return FileUtils.readFileToString(findFileDirectory(dir, "CoConstraints.xml"));
+		File f = findFileDirectory(dir, "CoConstraints.xml");
+		if (f != null) {
+			return FileUtils.readFileToString(findFileDirectory(dir, "CoConstraints.xml"));
+		}else {
+			return null;
+		}	
 	}
 
 	@Override
 	public String getSlicingsContentFromZipDirectory(String dir) throws IOException {
-		return FileUtils.readFileToString(findFileDirectory(dir, "Slicings.xml"));
+		File f = findFileDirectory(dir, "Slicings.xml");
+		if (f != null) {
+			return FileUtils.readFileToString(findFileDirectory(dir, "Slicings.xml"));
+		}else {
+			return null;
+		}		
 	}
 
 	@Override
 	public String getValueSetBindingsContentFromZipDirectory(String dir) throws IOException {
-		return FileUtils.readFileToString(findFileDirectory(dir, "ValueSetBindings.xml"));
+		File f = findFileDirectory(dir, "ValueSetBindings.xml");
+		if (f != null) {
+			return FileUtils.readFileToString(findFileDirectory(dir, "ValueSetBindings.xml"));
+		}else {
+			return null;
+		}
+		
 		
 	}
 	

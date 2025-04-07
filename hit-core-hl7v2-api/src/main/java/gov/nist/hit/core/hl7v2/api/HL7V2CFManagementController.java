@@ -283,9 +283,9 @@ public class HL7V2CFManagementController {
 
 		
 			//TODO get profile list when validation is done.
-			List<UploadedProfileModel> list = packagingHandler.getUploadedProfiles(content,null,null);
+//			List<UploadedProfileModel> list = packagingHandler.getUploadedProfiles(content,null,null,null);
 			resultMap.put("success", true);
-			resultMap.put("profiles", list);
+//			resultMap.put("profiles", list);
 					
 
 			return resultMap;
@@ -702,11 +702,12 @@ public class HL7V2CFManagementController {
       String profileContent = bundleHandler.getProfileContentFromZipDirectory(directory);
       String valueSetContent = bundleHandler.getValueSetContentFromZipDirectory(directory);
       String valueSetBindingContent = bundleHandler.getValueSetBindingsContentFromZipDirectory(directory);
-
+      String coConstraintContent = bundleHandler.getCoConstraintContentFromZipDirectory(directory);
+      
       if (profileContent == null)
         throw new MessageUploadException("Could not retrieve the profile list");
 
-      List<UploadedProfileModel> list = packagingHandler.getUploadedProfiles(profileContent,valueSetContent,valueSetBindingContent);
+      List<UploadedProfileModel> list = packagingHandler.getUploadedProfiles(profileContent,valueSetContent,valueSetBindingContent,coConstraintContent);
       resultMap.put("success", true);
       resultMap.put("profiles", list);
 

@@ -56,7 +56,7 @@ public class PackagingHandlerImpl implements PackagingHandler {
 	
 
 	@Override
-	public List<UploadedProfileModel> getUploadedProfiles(String profileXML, String valueSetXML, String valueSetBindingsXML) {
+	public List<UploadedProfileModel> getUploadedProfiles(String profileXML, String valueSetXML, String valueSetBindingsXML, String coConstraintsXML) {
 		
 		List<ValueSetDefinition> listOfExternalVSD = new ArrayList<ValueSetDefinition>();
 		if (valueSetXML != null) {
@@ -79,26 +79,38 @@ public class PackagingHandlerImpl implements PackagingHandler {
 			upm.setIdentifier(elmIntegrationProfile.getAttribute("Identifier"));
 			upm.setDescription(elmIntegrationProfile.getAttribute("Description"));
 			
-						
+			
+			//add external from valueSetBinding and coConstraints file
 			if (valueSetXML != null && valueSetBindingsXML != null) {
 				HL7V2ProfileParser profileParser = new HL7V2ProfileParserImpl();
 				ProfileModel profileModel;
 				try {
 					profileModel = profileParser.parseEnhanced(profileXML, elmIntegrationProfile.getAttribute("ID"), null,
-							null,valueSetXML,valueSetBindingsXML, null, null);
+							null,valueSetXML,valueSetBindingsXML, coConstraintsXML, null);
 					
 					List<ValueSetDefinition> externalVS = new ArrayList<ValueSetDefinition>();
-					for (ValueSetBinding vsb  : profileModel.getValueSetBinding()) {
-						
+					for (ValueSetBinding vsb  : profileModel.getValueSetBinding()) {						
 						for (Binding binding  : vsb.getBindingList()) {
-								Optional<ValueSetDefinition> matchedObject = listOfExternalVSD.stream()
-										  .filter(item -> item.getBindingIdentifier().equals(binding.getBindingIdentifier()))
-										  .findFirst();
-								if(matchedObject.isPresent()) {
-									externalVS.add(matchedObject.get());
-								}				
+							Optional<ValueSetDefinition> matchedObject = listOfExternalVSD.stream()
+									  .filter(item -> item.getBindingIdentifier().equals(binding.getBindingIdentifier()))
+									  .findFirst();
+							if(matchedObject.isPresent()) {
+								externalVS.add(matchedObject.get());
+							}				
 						}
 					}
+					
+					for (ValueSetBinding vsb  : profileModel.findValueSetBindingsFromCoConstraints()) {						
+						for (Binding binding  : vsb.getBindingList()) {
+							Optional<ValueSetDefinition> matchedObject = listOfExternalVSD.stream()
+									  .filter(item -> item.getBindingIdentifier().equals(binding.getBindingIdentifier()))
+									  .findFirst();
+							if(matchedObject.isPresent()) {
+								externalVS.add(matchedObject.get());
+							}				
+						}
+					}
+					
 					upm.setExternalValueSets(externalVS);
 					
 				} catch (ProfileParserException e) {
@@ -106,6 +118,7 @@ public class PackagingHandlerImpl implements PackagingHandler {
 					e.printStackTrace();
 				}
 			}
+			
 			
 			
 						

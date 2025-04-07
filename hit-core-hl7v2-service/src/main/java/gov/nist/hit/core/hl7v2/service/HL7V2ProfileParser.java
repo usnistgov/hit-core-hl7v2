@@ -31,12 +31,15 @@ import javax.xml.xpath.XPathExpressionException;
 import org.apache.commons.io.IOUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import gov.nist.hit.core.domain.ProfileElement;
 import gov.nist.hit.core.domain.ProfileModel;
 import gov.nist.hit.core.domain.ValueSetLibrary;
+import gov.nist.hit.core.domain.coconstraints.ByMessage;
+import gov.nist.hit.core.domain.coconstraints.CoConstraintContext;
 import gov.nist.hit.core.domain.constraints.ByID;
 import gov.nist.hit.core.domain.constraints.ByName;
 import gov.nist.hit.core.domain.constraints.ByNameOrByID;
@@ -46,14 +49,21 @@ import gov.nist.hit.core.domain.constraints.Context;
 import gov.nist.hit.core.domain.constraints.Predicate;
 import gov.nist.hit.core.domain.singlecodebindings.SingleCodeBinding;
 import gov.nist.hit.core.domain.singlecodebindings.SingleCodeBindings;
+import gov.nist.hit.core.domain.slicings.FieldSlicing;
+import gov.nist.hit.core.domain.slicings.FieldSlicingContext;
+import gov.nist.hit.core.domain.slicings.ProfileSlicing;
+import gov.nist.hit.core.domain.slicings.SegmentSlicing;
+import gov.nist.hit.core.domain.slicings.SegmentSlicingMessageContext;
 import gov.nist.hit.core.domain.valuesetbindings.ValueSetBinding;
 import gov.nist.hit.core.domain.valuesetbindings.ValueSetBindings;
 import gov.nist.hit.core.hl7v2.service.util.Util;
 import gov.nist.hit.core.service.ProfileParser;
 import gov.nist.hit.core.service.ValueSetLibrarySerializer;
 import gov.nist.hit.core.service.exception.ProfileParserException;
+import gov.nist.hit.core.service.impl.CoConstraintsParserImpl;
 import gov.nist.hit.core.service.impl.ConstraintsParserImpl;
 import gov.nist.hit.core.service.impl.SingleCodeBindingsParserImpl;
+import gov.nist.hit.core.service.impl.SlicingsParserImpl;
 import gov.nist.hit.core.service.impl.ValueSetBindingsParserImpl;
 import gov.nist.hit.core.service.impl.ValueSetLibrarySerializerImpl;
 import hl7.v2.profile.Component;
@@ -92,11 +102,15 @@ public abstract class HL7V2ProfileParser extends ProfileParser {
 	private ValueSetBindings valuesetBindings = null;
 	private ValueSetLibrary valueSetLibrary = null;
 	private SingleCodeBindings singleCodeBindings = null;
+	private CoConstraintContext coConstraints;
+	private ProfileSlicing profileSlicing;
 	
 	ConstraintsParserImpl constraintsParser = new ConstraintsParserImpl();
+	CoConstraintsParserImpl coConstraintsParser = new CoConstraintsParserImpl();
 	ValueSetBindingsParserImpl valuesetBindingsParser = new ValueSetBindingsParserImpl();
 	ValueSetLibrarySerializer valueSetLibrarySerializer = new ValueSetLibrarySerializerImpl();
 	SingleCodeBindingsParserImpl singleCodeBindingsParser = new SingleCodeBindingsParserImpl();
+	SlicingsParserImpl slicingsParser = new SlicingsParserImpl();
 	
 	@Override
 	/**
@@ -137,7 +151,7 @@ public abstract class HL7V2ProfileParser extends ProfileParser {
 	
 	@Override
 	public ProfileModel parseEnhanced(Object conformanceProfile, String constraintsXml,String additionalConstraintsXml,
-			String valueSetsXml, String valueSetBindingsXml, String coConstraints,String slicings) throws ProfileParserException {
+			String valueSetsXml, String valueSetBindingsXml, String coConstraintsXml,String slicingsXml) throws ProfileParserException {
 		try {
 			if (!(conformanceProfile instanceof Message)) {
 				throw new IllegalArgumentException(
@@ -147,6 +161,24 @@ public abstract class HL7V2ProfileParser extends ProfileParser {
 			String c2Xml = additionalConstraintsXml;
 			String vsXML = valueSetsXml;
 			String vsbXml = valueSetBindingsXml;
+			String coCoXml = coConstraintsXml;
+			
+			//get external VS list here and use it in valueset and coconstraint
+			java.util.List<String> externalVSIdentifiers = new ArrayList<String>();
+			if (vsXML != null) {
+				Document valueSetDoc = this.stringToDom(vsXML);
+				// list all external vs to identify them in vs bindings
+				if (valueSetDoc.getElementsByTagName("ExternalValueSetDefinitions") != null
+						&& valueSetDoc.getElementsByTagName("ExternalValueSetDefinitions").getLength() > 0) {
+					Element extVSDefs = (Element) valueSetDoc.getElementsByTagName("ExternalValueSetDefinitions").item(0);
+					NodeList valueSetDefNodes = extVSDefs.getElementsByTagName("ValueSetDefinition");
+					for (int i = 0; i < valueSetDefNodes.getLength(); i++) {
+						Element vsdef = (Element) valueSetDefNodes.item(i);
+						externalVSIdentifiers.add(vsdef.getAttribute("BindingIdentifier"));
+					}
+				}
+			}
+			
 			
 			
 			this.segmentsMap = new LinkedHashMap<String, ProfileElement>();
@@ -156,6 +188,12 @@ public abstract class HL7V2ProfileParser extends ProfileParser {
 			
 			this.valueSetLibrary = valueSetLibrarySerializer.toObject(vsXML);
 			this.valuesetBindings = valuesetBindingsParser.valueSetBindings(vsbXml,vsXML);
+			
+			coConstraintsParser.setExternalVSIdentifiers(externalVSIdentifiers);
+			this.coConstraints = coConstraintsParser.coConstraints(coCoXml);
+			
+			this.profileSlicing = slicingsParser.slicings(slicingsXml);
+			
 			this.singleCodeBindings = singleCodeBindingsParser.singleCodeBindings(vsbXml);	
 			
 			if (c2Xml != null) {
@@ -300,7 +338,7 @@ public abstract class HL7V2ProfileParser extends ProfileParser {
 		message.setValuesetbindings(this.findValueSetBindings(this.valuesetBindings.getMessages(), 
 				model.getMessage().getId(),	model.getMessage().getName()));
 		message.setSinglecodebindings(this.findSingleCodeBindings(this.singleCodeBindings.getMessages(),model.getMessage().getId(),	model.getMessage().getName()));
-
+		
 		
 		model.addValueSetBindings(message.getValuesetbindings());
 		model.addSingleCodeBindings(message.getSinglecodebindings());
@@ -312,7 +350,12 @@ public abstract class HL7V2ProfileParser extends ProfileParser {
 				processEnhanced(it.next(), message);
 			}
 		}
-									
+								
+		model.setCoConstraints(findCoConstraints(model.getMessage().getId()));
+		filterSlicings(model.getMessage().getId());
+		model.setProfileSlicing(this.profileSlicing);
+		
+		
 		model.setDatatypes(this.datatypesMap);
 		model.setSegments(this.segmentsMap);		
 	
@@ -1128,6 +1171,41 @@ public abstract class HL7V2ProfileParser extends ProfileParser {
 		}
 		return result;
 	}
+	
+	private ArrayList<gov.nist.hit.core.domain.coconstraints.Context> findCoConstraints(String messageId) {
+		ArrayList<gov.nist.hit.core.domain.coconstraints.Context>  list = new ArrayList<gov.nist.hit.core.domain.coconstraints.Context>();
+		for(ByMessage byMessage :this.coConstraints.getByMessages()) {
+			if (byMessage.getId().equals(messageId)) {
+				list.addAll(byMessage.getContexts());
+			}
+		}
+		return list;
+	}
+	
+	//include only SegmentSlicing and FieldSlicing that are present in the message
+	private void filterSlicings(String messageId) {
+		if (this.profileSlicing != null) {
+			SegmentSlicing ssl= profileSlicing.getSegmentSlicing();		
+			java.util.Iterator<SegmentSlicingMessageContext> iterator = ssl.getMessages().iterator();
+	        while (iterator.hasNext()) {
+	        	SegmentSlicingMessageContext message = iterator.next();
+	            if (!message.getId().equals(messageId)) {
+	                iterator.remove(); // remove SegmentSlicingMessageContext that are not for this message ID
+	            }
+	        }	
+	        
+	        FieldSlicing fsl= profileSlicing.getFieldSlicing();		
+			java.util.Iterator<FieldSlicingContext> iterator2 = fsl.getSegmentContexts().iterator();
+	        while (iterator2.hasNext()) {
+	        	FieldSlicingContext segment = iterator2.next();
+	            if (!this.segmentsMap.containsKey(segment.getId())) {
+	                iterator2.remove(); // remove SegmentSlicingMessageContext that are not for this message ID
+	            }
+	        }	
+		}
+	}
+	
+	
 	
 	
 	

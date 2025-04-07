@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
 import javax.servlet.ServletRequest;
@@ -52,8 +53,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import gov.nist.auth.hit.core.domain.Account;
 import gov.nist.hit.core.api.SessionContext;
 import gov.nist.hit.core.domain.AbstractTestCase;
-import gov.nist.hit.core.domain.CFTestPlan;
-import gov.nist.hit.core.domain.CFTestStep;
 import gov.nist.hit.core.domain.ResourceType;
 import gov.nist.hit.core.domain.ResourceUploadAction;
 import gov.nist.hit.core.domain.ResourceUploadResult;
@@ -84,6 +83,7 @@ import gov.nist.hit.core.service.UserIdService;
 import gov.nist.hit.core.service.UserService;
 import gov.nist.hit.core.service.exception.MessageUploadException;
 import gov.nist.hit.core.service.exception.NoUserFoundException;
+import gov.nist.hit.hl7.profile.validation.domain.ProfileValidationReport;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -833,15 +833,42 @@ public class CBManagementController {
 					result.setMessage("A different test plan with the same identifier already exists and belongs to a different user");
 					return result;
 				}
-
 			}
-			// testPlanService.findOne()
+			
+			//files validation 
+			List<ProfileValidationReport> reports = fileValidationHandler.getHTMLValidatioReportForContextBased(directory);
+			List<String> filteredreports = reports.stream()
+	                .filter(report -> !report.isSuccess())
+	                .map(ProfileValidationReport::generateHTML)
+	                .collect(Collectors.toList());
+			
+			 if (filteredreports.size()>0) {
+				 	ResourceUploadStatus result = new ResourceUploadStatus();
+					result.setAction(ResourceUploadAction.UPLOAD);
+					result.setStatus(ResourceUploadResult.FAILURE);
+					result.setMessage("File validation failed");
+					result.setReports(filteredreports);
+		            logger.info("Uploaded profile file with errors " + part.getName());
+		            FileUtils.deleteDirectory(new File(directory));
+					return result;		            
+		          } else {
+		        	ResourceUploadStatus result = new ResourceUploadStatus();
+		  			result.setAction(ResourceUploadAction.UPLOAD);
+		  			result.setStatus(ResourceUploadResult.SUCCESS);
+		  			result.setToken(token);
+		            logger.info("Uploaded valid zip File file " + part.getName());
+		  			return result;
 
-			ResourceUploadStatus result = new ResourceUploadStatus();
-			result.setAction(ResourceUploadAction.UPLOAD);
-			result.setStatus(ResourceUploadResult.SUCCESS);
-			result.setToken(token);
-			return result;
+		       }
+			 			 
+			
+//			// testPlanService.findOne()
+//
+//			ResourceUploadStatus result = new ResourceUploadStatus();
+//			result.setAction(ResourceUploadAction.UPLOAD);
+//			result.setStatus(ResourceUploadResult.SUCCESS);
+//			result.setToken(token);
+//			return result;
 		
 		} catch (NoUserFoundException e) {
 			ResourceUploadStatus result = new ResourceUploadStatus();

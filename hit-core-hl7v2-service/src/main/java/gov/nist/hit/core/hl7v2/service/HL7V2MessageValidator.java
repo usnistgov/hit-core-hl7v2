@@ -175,11 +175,11 @@ public abstract class HL7V2MessageValidator implements MessageValidator {
 					
 						
 				//get hl7v2 validation version if specified
-				String externalValidationVersion = null;
+				String validationServiceVersion = null;
 				if (v2TestContext.getHl7v2ValidationVersion() != null && !v2TestContext.getHl7v2ValidationVersion().isEmpty()) {
-					externalValidationVersion = v2TestContext.getHl7v2ValidationVersion();
+					validationServiceVersion = v2TestContext.getHl7v2ValidationVersion();
 				}else if (domain.getHl7v2ValidationVersion() != null && !domain.getHl7v2ValidationVersion().isEmpty()) {
-					externalValidationVersion = domain.getHl7v2ValidationVersion();
+					validationServiceVersion = domain.getHl7v2ValidationVersion();
 				}
 				
 				
@@ -195,7 +195,7 @@ public abstract class HL7V2MessageValidator implements MessageValidator {
 							conformanceProfielId,
 							Context.valueOf(contextType),
 							conf,
-							v2TestContext.getApiHashMap(),externalValidationVersion);
+							v2TestContext.getApiHashMap(),validationServiceVersion);
 					
 						//not local validation dependency
 //						report = vp.validateNew(message,

@@ -514,7 +514,7 @@ public class HL7V2ResourceLoaderImpl extends HL7V2ResourceLoader {
 		JsonNode coConstraintsId = formatObj.findValue("coConstraintsId");
 		//yes I know it the same... it's there in case the alternate id changes...
 		if (coConstraintsId == null) {
-			coConstraintsId = formatObj.findValue("bindingId");
+			coConstraintsId = formatObj.findValue("coConstraintsId");
 		}
 		
 		
@@ -669,7 +669,12 @@ public class HL7V2ResourceLoaderImpl extends HL7V2ResourceLoader {
 					vsbContent = testContext.getValueSetBindings().getXml();
 				} 
 				
-				List<UploadedProfileModel> list = packagingHandler.getUploadedProfiles(content,vsContent,vsbContent);
+				String coConsContent= null;
+				if (testContext.getCoConstraints() != null) {
+					coConsContent = testContext.getCoConstraints().getXml();
+				} 
+				
+				List<UploadedProfileModel> list = packagingHandler.getUploadedProfiles(content,vsContent,vsbContent,coConsContent);
 				content = packagingHandler.removeUnusedAndDuplicateMessages(content,
 						new HashSet<UploadedProfileModel>(Arrays.asList(list.get(0))));
 				content = packagingHandler.changeProfileId(content);
@@ -701,10 +706,9 @@ public class HL7V2ResourceLoaderImpl extends HL7V2ResourceLoader {
 		}
 		
 		
-		//api keys
+		//api keys from valueset bindings
 		if(testContext.getVocabularyLibrary() != null && testContext.getValueSetBindings() != null) {
 			List<ValueSetDefinition> listOfExternalVSD = packagingHandler.getExternalValueSets(testContext.getVocabularyLibrary().getXml());
-			ValueSetBindingsParserImpl valuesetBindingsParser = new ValueSetBindingsParserImpl();
 			ProfileModel profileModel = profileParser.parseEnhanced(testContext.getConformanceProfile().getXml(), testContext.getConformanceProfile().getSourceId()+"", null,
 					null,testContext.getVocabularyLibrary().getXml(),testContext.getValueSetBindings().getXml(), null,null); //testContext.getCoConstraints().getXml(), testContext.getSlicings().getXml()
 			
@@ -718,7 +722,27 @@ public class HL7V2ResourceLoaderImpl extends HL7V2ResourceLoader {
 							testContext.getApikeys().add(new APIKey(matchedObject.get().getBindingIdentifier(),matchedObject.get().getUrl(),null));
 						}				
 				}
+			}			
+		}
+		
+		//api keys from coconstraints
+		if(testContext.getVocabularyLibrary() != null && testContext.getCoConstraints() != null) {
+			List<ValueSetDefinition> listOfExternalVSD = packagingHandler.getExternalValueSets(testContext.getVocabularyLibrary().getXml());			
+			ProfileModel profileModel = profileParser.parseEnhanced(testContext.getConformanceProfile().getXml(), testContext.getConformanceProfile().getSourceId()+"", null,
+					null,testContext.getVocabularyLibrary().getXml(),testContext.getValueSetBindings().getXml(), testContext.getCoConstraints().getXml(),null); //testContext.getCoConstraints().getXml(), testContext.getSlicings().getXml()
+			
+			for (ValueSetBinding vsb  : profileModel.findValueSetBindingsFromCoConstraints()) {
+				
+				for (Binding binding  : vsb.getBindingList()) {
+						Optional<ValueSetDefinition> matchedObject = listOfExternalVSD.stream()
+								  .filter(item -> item.getBindingIdentifier().equals(binding.getBindingIdentifier()))
+								  .findFirst();
+						if(matchedObject.isPresent()) {
+							testContext.getApikeys().add(new APIKey(matchedObject.get().getBindingIdentifier(),matchedObject.get().getUrl(),null));
+						}				
+				}
 			}
+			
 		}
 		
 		
