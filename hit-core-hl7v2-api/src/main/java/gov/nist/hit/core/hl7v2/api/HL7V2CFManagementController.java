@@ -80,9 +80,11 @@ import gov.nist.hit.core.hl7v2.domain.HL7V2TestContext;
 import gov.nist.hit.core.hl7v2.domain.TestCaseWrapper;
 import gov.nist.hit.core.hl7v2.domain.UploadedProfileModel;
 import gov.nist.hit.core.hl7v2.service.FileValidationHandler;
+import gov.nist.hit.core.hl7v2.service.HL7V2TestContextService;
 import gov.nist.hit.core.hl7v2.service.PackagingHandler;
 import gov.nist.hit.core.hl7v2.service.impl.FileValidationHandlerImpl.InvalidFileTypeException;
 import gov.nist.hit.core.hl7v2.service.impl.HL7V2ProfileParserImpl;
+import gov.nist.hit.core.hl7v2.service.impl.HL7V2ResourceLoaderImpl;
 import gov.nist.hit.core.repo.CoConstraintsRepository;
 import gov.nist.hit.core.repo.ConstraintsRepository;
 import gov.nist.hit.core.repo.IntegrationProfileRepository;
@@ -172,6 +174,9 @@ public class HL7V2CFManagementController {
   
   @Autowired
   private CFTestStepGroupService testStepGroupService;
+  
+  @Autowired
+  private HL7V2ResourceLoaderImpl resourceLoader;
 
 	@PostConstruct
 	  public void init() {
@@ -1104,6 +1109,70 @@ public class HL7V2CFManagementController {
     }
 
   }
+  
+  
+  
+  @PreAuthorize("hasRole('tester')")
+  @RequestMapping(value = "/testStepGroups/{testStepGroupId}/refreshTestContext", method = RequestMethod.POST)
+  @ResponseBody
+  public Map<String, Object> refreshTestStepGroupsTestContextModels(HttpServletRequest request,
+      @PathVariable("testStepGroupId") Long testStepGroupId,
+      Authentication auth) {
+    
+        Map<String, Object> resultMap = new HashMap<String, Object>();
+      try {
+		checkManagementSupport();
+	
+      CFTestStepGroup testStepGroup = testStepGroupService.findOne(testStepGroupId);
+      if (testStepGroup == null) {
+        throw new Exception("Profile Group could not be found");
+      }
+      String username = auth.getName();
+      if (!username.equals(testStepGroup.getAuthorUsername()) && !userService.isAdmin(username)) {
+        throw new Exception("You do not have sufficient right to change this profile group");
+      }
+        
+      resourceLoader.updateTestStepGroupConformanceProfileJson(testStepGroup);
+      
+
+      return resultMap;
+      } catch (Exception e) {
+       resultMap.put("error", e.getMessage());
+       return resultMap;
+  	}
+  }
+  
+  @PreAuthorize("hasRole('tester')")
+  @RequestMapping(value = "/testPlans/{testPlanId}/refreshTestContext", method = RequestMethod.POST)
+  @ResponseBody
+  public Map<String, Object> refreshTestPlanTestContextModels(HttpServletRequest request,
+      @PathVariable("testPlanId") Long testStepGroupId,
+      Authentication auth) {
+    
+        Map<String, Object> resultMap = new HashMap<String, Object>();
+      try {
+		checkManagementSupport();
+	
+      CFTestPlan testPlan = testPlanService.findOne(testStepGroupId);
+      if (testPlan == null) {
+        throw new Exception("Test Plan could not be found");
+      }
+      String username = auth.getName();
+      if (!username.equals(testPlan.getAuthorUsername()) && !userService.isAdmin(username)) {
+        throw new Exception("You do not have sufficient right to change this profile group");
+      }
+        
+      resourceLoader.updateTestPlanConformanceProfileJson(testPlan);
+      
+
+      return resultMap;
+      } catch (Exception e) {
+       resultMap.put("error", e.getMessage());
+       return resultMap;
+  	}
+  }
+  
+  
 
   /**
    * Delete a profile from the database

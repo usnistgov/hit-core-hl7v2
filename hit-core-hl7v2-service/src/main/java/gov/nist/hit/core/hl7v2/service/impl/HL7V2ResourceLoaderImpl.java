@@ -7,6 +7,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import javax.persistence.EntityManager;
@@ -22,9 +23,13 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
 import com.fasterxml.jackson.core.JsonGenerationException;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 
+import gov.nist.hit.core.domain.CFTestPlan;
+import gov.nist.hit.core.domain.CFTestStep;
+import gov.nist.hit.core.domain.CFTestStepGroup;
 import gov.nist.hit.core.domain.CoConstraints;
 import gov.nist.hit.core.domain.ConformanceProfile;
 import gov.nist.hit.core.domain.Constraints;
@@ -53,7 +58,6 @@ import gov.nist.hit.core.hl7v2.service.HL7V2ProfileParser;
 import gov.nist.hit.core.hl7v2.service.HL7V2ResourceLoader;
 import gov.nist.hit.core.service.ValueSetLibrarySerializer;
 import gov.nist.hit.core.service.exception.ProfileParserException;
-import gov.nist.hit.core.service.impl.ValueSetBindingsParserImpl;
 import gov.nist.hit.core.service.impl.ValueSetLibrarySerializerImpl;
 import gov.nist.hit.core.service.util.FileUtil;
 
@@ -76,38 +80,6 @@ public class HL7V2ResourceLoaderImpl extends HL7V2ResourceLoader {
 	@Autowired
 	@PersistenceContext(unitName = "base-tool")
 	protected EntityManager entityManager;
-
-	
-	
-//	@Override
-//	public void clearDB() {
-//		appInfoRepository.deleteAll();
-//		domainService.deletePreloaded();
-//		validationResultRepository.deleteAll();
-//		
-//		cbTestPlanService.deleteAllPreloaded();
-//		cfTestPlanService.deleteAllPreloaded();
-//		
-//		testCaseGroupService.deleteAllPreloaded();
-//		cfTestStepGroupRepository.deletePreloaded();
-//		
-//		testCaseService.deleteAllPreloaded();
-//		
-//		testStepService.deleteAllPreloaded();
-//		
-//		testContextRepository.deletePreloaded();
-//
-//		vocabularyLibraryRepository.deletePreloaded();
-//		constraintsRepository.deletePreloaded();
-//		integrationProfileRepository.deletePreloaded();
-//		
-//		testCaseDocumentationRepository.deleteAll();
-//		transportFormsRepository.deleteAll();
-//		documentRepository.deleteAll();
-//		transportMessageRepository.deleteAll();
-//		transactionRepository.deleteAll();
-//		
-//	}
 	
 	@Override
 	protected ValueSetBindings getValueSetBindingsBySourceId(String sourceId) throws IOException {
@@ -847,5 +819,53 @@ public class HL7V2ResourceLoaderImpl extends HL7V2ResourceLoader {
 		}
 		return listOfExternalVSD;
 	}
+	
+	
+	//update ConformanceProfile
+	
+	public void updateConformanceProfileJson(HL7V2TestContext testContext) {
+		ConformanceProfile cp = testContext.getConformanceProfile();
+		
+		try {
+			cp.setJson(jsonConformanceProfileEnhanced(cp.getXml(), cp.getSourceId(),
+					testContext.getConstraints() != null ? testContext.getConstraints().getXml() : null,
+					testContext.getAddditionalConstraints() != null ? testContext.getAddditionalConstraints().getXml() : null,
+					testContext.getVocabularyLibrary() != null ? testContext.getVocabularyLibrary().getXml() : null,
+					testContext.getValueSetBindings() != null ? testContext.getValueSetBindings().getXml() : null,
+					testContext.getCoConstraints() != null ? testContext.getCoConstraints().getXml() : null,
+					testContext.getSlicings() != null ? testContext.getSlicings().getXml() : null));
+		} catch (ProfileParserException | JsonProcessingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	public void updateTestStepConformanceProfileJson(CFTestStep testStep)  {
+		updateConformanceProfileJson((HL7V2TestContext)testStep.getTestContext());
+	}
+
+	public void updateTestStepGroupConformanceProfileJson(CFTestStepGroup testStepGroup)  {	
+		Set<CFTestStepGroup> testStepGroups = testStepGroup.getTestStepGroups();
+		for(CFTestStepGroup tsg : testStepGroups) {
+			updateTestStepGroupConformanceProfileJson(tsg);
+		}
+		
+		Set<CFTestStep> testSteps = testStepGroup.getTestSteps();
+		for(CFTestStep tsg : testSteps) {
+			updateTestStepConformanceProfileJson(tsg);
+		}
+	}
+	
+	public void updateTestPlanConformanceProfileJson(CFTestPlan testPlan)  {	
+		Set<CFTestStepGroup> testStepGroups = testPlan.getTestStepGroups();
+		for(CFTestStepGroup tsg : testStepGroups) {
+			updateTestStepGroupConformanceProfileJson(tsg);
+		}		
+		Set<CFTestStep> testSteps = testPlan.getTestSteps();
+		for(CFTestStep tsg : testSteps) {
+			updateTestStepConformanceProfileJson(tsg);
+		}
+	}
+	
 
 }

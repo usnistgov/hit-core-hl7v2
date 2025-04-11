@@ -12,6 +12,7 @@
 
 package gov.nist.hit.core.hl7v2.api;
 
+import java.io.IOException;
 import java.security.Principal;
 import java.util.List;
 import java.util.Set;
@@ -43,12 +44,13 @@ import gov.nist.hit.core.hl7v2.service.HL7V2MessageParser;
 import gov.nist.hit.core.hl7v2.service.HL7V2MessageValidator;
 import gov.nist.hit.core.hl7v2.service.HL7V2TestContextService;
 import gov.nist.hit.core.hl7v2.service.HL7V2ValidationReportConverter;
+import gov.nist.hit.core.hl7v2.service.impl.HL7V2ResourceLoaderImpl;
 import gov.nist.hit.core.service.AppInfoService;
 import gov.nist.hit.core.service.UserIdService;
 import gov.nist.hit.core.service.UserService;
 import gov.nist.hit.core.service.ValidationReportConverter;
-import gov.nist.hit.core.service.exception.MessageUploadException;
 import gov.nist.hit.core.service.exception.NoUserFoundException;
+import gov.nist.hit.core.service.exception.ProfileParserException;
 import io.swagger.annotations.Api;
 
 /**
@@ -79,6 +81,9 @@ public class HL7V2TestContextController extends TestContextController {
   
   @Autowired
    private HL7V2TestContextService hL7V2TestContextService;
+  
+	@Autowired
+	private HL7V2ResourceLoaderImpl resourceLoader;
 
   @Override
   public TestContext getTestContext(Long testContextId) {
@@ -172,8 +177,57 @@ public class HL7V2TestContextController extends TestContextController {
 			e.printStackTrace();	
 			return null;
 		}
-		
 	}
+	
+	@PreAuthorize("hasRole('tester')")
+	@RequestMapping(value = "/{testContextId}/updateConformanceProfileModel", method = RequestMethod.POST)
+	public ResourceUploadStatus updateConformanceProfileJson(HttpServletRequest request, @PathVariable("testContextId") Long testContextId, Principal p)  {		
+		HL7V2TestContext testContext = hL7V2TestContextService.findOne(testContextId);
+		//has to be textcontext user or admin
+		
+			try {
+				checkPermission(testContextId, testContext, p);
+		
+				resourceLoader.updateConformanceProfileJson(testContext);
+				hL7V2TestContextService.save(testContext);
+				
+				ResourceUploadStatus result = new ResourceUploadStatus();
+				result.setType(ResourceType.TESTCONTEXT);
+				result.setAction(ResourceUploadAction.UPDATE);
+				result.setId(testContext.getId());
+				result.setStatus(ResourceUploadResult.SUCCESS);
+				result.setMessage("model updated");
+				return result;
+			} catch (ProfileParserException | IOException e) {				
+				ResourceUploadStatus result = new ResourceUploadStatus();
+				result.setType(ResourceType.TESTCONTEXT);
+				result.setAction(ResourceUploadAction.UPDATE);
+				result.setId(testContext.getId());
+				result.setStatus(ResourceUploadResult.FAILURE);
+				result.setMessage("An error occured while updating ");
+				return result;
+			} catch  (NoUserFoundException e) {
+				ResourceUploadStatus result = new ResourceUploadStatus();
+				result.setType(ResourceType.TESTCONTEXT);
+				result.setAction(ResourceUploadAction.UPDATE);
+				result.setId(testContext.getId());
+				result.setStatus(ResourceUploadResult.FAILURE);
+				result.setMessage(e.getMessage());
+				return result;
+			} catch (Exception e) {
+				ResourceUploadStatus result = new ResourceUploadStatus();
+				result.setType(ResourceType.TESTCONTEXT);
+				result.setAction(ResourceUploadAction.UPDATE);
+				result.setId(testContext.getId());
+				result.setStatus(ResourceUploadResult.FAILURE);
+				result.setMessage("An unknonwn error occured.");
+				return result;
+
+			}
+						
+	}
+	
+	
 
 	private void checkManagementSupport() throws Exception {
 		if (!appInfoService.get().isCbManagementSupported()) {
@@ -187,10 +241,7 @@ public class HL7V2TestContextController extends TestContextController {
 			throw new NoUserFoundException("User could not be found");
 		if (testContext == null)
 			throw new Exception("No testcontext (" + id + ") found");
-		TestScope scope = testContext.getScope();
-		if (scope.equals(TestScope.GLOBAL) && !userService.hasGlobalAuthorities(username)) {
-			throw new NoUserFoundException("You do not have the permission to perform this task");
-		}
+		TestScope scope = testContext.getScope();		
 		if (!username.equals(testContext.getAuthorUsername()) && !userService.isAdmin(username)) {
 			throw new NoUserFoundException("You do not have the permission to perform this task");
 		}

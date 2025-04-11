@@ -1173,6 +1173,7 @@ public abstract class HL7V2ProfileParser extends ProfileParser {
 	}
 	
 	private ArrayList<gov.nist.hit.core.domain.coconstraints.Context> findCoConstraints(String messageId) {
+		if (this.coConstraints == null) return null;
 		ArrayList<gov.nist.hit.core.domain.coconstraints.Context>  list = new ArrayList<gov.nist.hit.core.domain.coconstraints.Context>();
 		for(ByMessage byMessage :this.coConstraints.getByMessages()) {
 			if (byMessage.getId().equals(messageId)) {
@@ -1184,7 +1185,7 @@ public abstract class HL7V2ProfileParser extends ProfileParser {
 	
 	//include only SegmentSlicing and FieldSlicing that are present in the message
 	private void filterSlicings(String messageId) {
-		if (this.profileSlicing != null) {
+		if (this.profileSlicing != null && profileSlicing.getSegmentSlicing() != null) {
 			SegmentSlicing ssl= profileSlicing.getSegmentSlicing();		
 			java.util.Iterator<SegmentSlicingMessageContext> iterator = ssl.getMessages().iterator();
 	        while (iterator.hasNext()) {
