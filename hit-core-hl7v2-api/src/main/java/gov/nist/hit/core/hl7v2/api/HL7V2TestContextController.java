@@ -184,7 +184,6 @@ public class HL7V2TestContextController extends TestContextController {
 	public ResourceUploadStatus updateConformanceProfileJson(HttpServletRequest request, @PathVariable("testContextId") Long testContextId, Principal p)  {		
 		HL7V2TestContext testContext = hL7V2TestContextService.findOne(testContextId);
 		//has to be textcontext user or admin
-		
 			try {
 				checkPermission(testContextId, testContext, p);
 		

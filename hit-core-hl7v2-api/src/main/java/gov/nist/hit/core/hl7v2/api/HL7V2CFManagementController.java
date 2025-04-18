@@ -1132,8 +1132,8 @@ public class HL7V2CFManagementController {
         throw new Exception("You do not have sufficient right to change this profile group");
       }
         
-      resourceLoader.updateTestStepGroupConformanceProfileJson(testStepGroup);
-      
+      resourceLoader.updateCFTestStepGroupConformanceProfileJson(testStepGroup);
+      testStepGroupService.save(testStepGroup);
 
       return resultMap;
       } catch (Exception e) {
@@ -1146,14 +1146,14 @@ public class HL7V2CFManagementController {
   @RequestMapping(value = "/testPlans/{testPlanId}/refreshTestContext", method = RequestMethod.POST)
   @ResponseBody
   public Map<String, Object> refreshTestPlanTestContextModels(HttpServletRequest request,
-      @PathVariable("testPlanId") Long testStepGroupId,
+      @PathVariable("testPlanId") Long testPlanId,
       Authentication auth) {
     
         Map<String, Object> resultMap = new HashMap<String, Object>();
       try {
 		checkManagementSupport();
 	
-      CFTestPlan testPlan = testPlanService.findOne(testStepGroupId);
+      CFTestPlan testPlan = testPlanService.findOne(testPlanId);
       if (testPlan == null) {
         throw new Exception("Test Plan could not be found");
       }
@@ -1162,8 +1162,38 @@ public class HL7V2CFManagementController {
         throw new Exception("You do not have sufficient right to change this profile group");
       }
         
-      resourceLoader.updateTestPlanConformanceProfileJson(testPlan);
-      
+      resourceLoader.updateCFTestPlanConformanceProfileJson(testPlan);
+      testPlanService.save(testPlan);
+
+      return resultMap;
+      } catch (Exception e) {
+       resultMap.put("error", e.getMessage());
+       return resultMap;
+  	}
+  }
+  
+  @PreAuthorize("hasRole('tester')")
+  @RequestMapping(value = "/testSteps/{testStepId}/refreshTestContext", method = RequestMethod.POST)
+  @ResponseBody
+  public Map<String, Object> refreshTestStepTestContextModels(HttpServletRequest request,
+      @PathVariable("testStepId") Long testStepId,
+      Authentication auth) {
+    
+        Map<String, Object> resultMap = new HashMap<String, Object>();
+      try {
+		checkManagementSupport();
+	
+      CFTestStep testStep = testStepService.findOne(testStepId);
+      if (testStep == null) {
+        throw new Exception("Test Step could not be found");
+      }
+      String username = auth.getName();
+      if (!username.equals(testStep.getAuthorUsername()) && !userService.isAdmin(username)) {
+        throw new Exception("You do not have sufficient right to change this profile group");
+      }
+        
+      resourceLoader.updateTestStepCFConformanceProfileJson(testStep);
+      testStepService.save(testStep);
 
       return resultMap;
       } catch (Exception e) {

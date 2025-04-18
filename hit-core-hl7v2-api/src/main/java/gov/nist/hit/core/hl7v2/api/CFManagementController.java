@@ -49,6 +49,7 @@ import gov.nist.hit.core.domain.CFTestPlan;
 import gov.nist.hit.core.domain.CFTestStep;
 import gov.nist.hit.core.domain.CFTestStepGroup;
 import gov.nist.hit.core.domain.Message;
+import gov.nist.hit.core.domain.ObjectType;
 import gov.nist.hit.core.domain.ProfileModel;
 import gov.nist.hit.core.domain.ResourceType;
 import gov.nist.hit.core.domain.ResourceUploadAction;
@@ -852,6 +853,7 @@ public class CFManagementController {
         model.setName(step.getName());
         model.setId(step.getId() + "");
         model.setPosition(step.getPosition());
+        model.setType(ObjectType.TestStep+"");
         if (step.getTestContext() != null) {
           Message message = step.getTestContext().getMessage();
           if (message != null) {

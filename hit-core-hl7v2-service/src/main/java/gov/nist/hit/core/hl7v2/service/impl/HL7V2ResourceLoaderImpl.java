@@ -40,9 +40,13 @@ import gov.nist.hit.core.domain.ResourceUploadAction;
 import gov.nist.hit.core.domain.ResourceUploadResult;
 import gov.nist.hit.core.domain.ResourceUploadStatus;
 import gov.nist.hit.core.domain.Slicings;
+import gov.nist.hit.core.domain.TestCase;
 import gov.nist.hit.core.domain.TestCaseDocument;
+import gov.nist.hit.core.domain.TestCaseGroup;
 import gov.nist.hit.core.domain.TestContext;
+import gov.nist.hit.core.domain.TestPlan;
 import gov.nist.hit.core.domain.TestScope;
+import gov.nist.hit.core.domain.TestStep;
 import gov.nist.hit.core.domain.TestingStage;
 import gov.nist.hit.core.domain.ValueSetBindings;
 import gov.nist.hit.core.domain.ValueSetDefinition;
@@ -840,32 +844,69 @@ public class HL7V2ResourceLoaderImpl extends HL7V2ResourceLoader {
 		}
 	}
 	
-	public void updateTestStepConformanceProfileJson(CFTestStep testStep)  {
+	public void updateTestStepCFConformanceProfileJson(CFTestStep testStep)  {
 		updateConformanceProfileJson((HL7V2TestContext)testStep.getTestContext());
 	}
 
-	public void updateTestStepGroupConformanceProfileJson(CFTestStepGroup testStepGroup)  {	
+	public void updateCFTestStepGroupConformanceProfileJson(CFTestStepGroup testStepGroup)  {	
 		Set<CFTestStepGroup> testStepGroups = testStepGroup.getTestStepGroups();
 		for(CFTestStepGroup tsg : testStepGroups) {
-			updateTestStepGroupConformanceProfileJson(tsg);
+			updateCFTestStepGroupConformanceProfileJson(tsg);
 		}
 		
 		Set<CFTestStep> testSteps = testStepGroup.getTestSteps();
 		for(CFTestStep tsg : testSteps) {
-			updateTestStepConformanceProfileJson(tsg);
+			updateTestStepCFConformanceProfileJson(tsg);
 		}
 	}
 	
-	public void updateTestPlanConformanceProfileJson(CFTestPlan testPlan)  {	
+	public void updateCFTestPlanConformanceProfileJson(CFTestPlan testPlan)  {	
 		Set<CFTestStepGroup> testStepGroups = testPlan.getTestStepGroups();
 		for(CFTestStepGroup tsg : testStepGroups) {
-			updateTestStepGroupConformanceProfileJson(tsg);
+			updateCFTestStepGroupConformanceProfileJson(tsg);
 		}		
 		Set<CFTestStep> testSteps = testPlan.getTestSteps();
 		for(CFTestStep tsg : testSteps) {
-			updateTestStepConformanceProfileJson(tsg);
+			updateTestStepCFConformanceProfileJson(tsg);
 		}
 	}
+	
+	
+	public void updateTestStepCBConformanceProfileJson(TestStep testStep)  {
+		updateConformanceProfileJson((HL7V2TestContext)testStep.getTestContext());
+	}
+
+	public void updateCBTestStepGroupConformanceProfileJson(TestCaseGroup testCaseGroup)  {	
+		Set<TestCaseGroup> testStepGroups = testCaseGroup.getTestCaseGroups();
+		for(TestCaseGroup tcg : testStepGroups) {
+			updateCBTestStepGroupConformanceProfileJson(tcg);
+		}
+		
+		Set<TestCase> testCases = testCaseGroup.getTestCases();
+		for(TestCase tc : testCases) {
+			updateCBTestCaseConformanceProfileJson(tc);
+		}
+	}
+	
+	public void updateCBTestCaseConformanceProfileJson(TestCase testCase)  {	
+		Set<TestStep> testSteps = testCase.getTestSteps();
+		for(TestStep ts : testSteps) {
+			updateTestStepCBConformanceProfileJson(ts);
+		}
+	}
+	
+	public void updateCBTestPlanConformanceProfileJson(TestPlan testPlan)  {	
+		Set<TestCaseGroup> testCaseGroups = testPlan.getTestCaseGroups();
+		for(TestCaseGroup tcg : testCaseGroups) {
+			updateCBTestStepGroupConformanceProfileJson(tcg);
+		}		
+		Set<TestCase> testCases = testPlan.getTestCases();
+		for(TestCase tc : testCases) {
+			updateCBTestCaseConformanceProfileJson(tc);
+		}
+	}
+	
+	
 	
 
 }

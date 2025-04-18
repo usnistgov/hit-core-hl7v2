@@ -53,6 +53,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import gov.nist.auth.hit.core.domain.Account;
 import gov.nist.hit.core.api.SessionContext;
 import gov.nist.hit.core.domain.AbstractTestCase;
+import gov.nist.hit.core.domain.CFTestPlan;
 import gov.nist.hit.core.domain.ResourceType;
 import gov.nist.hit.core.domain.ResourceUploadAction;
 import gov.nist.hit.core.domain.ResourceUploadResult;
@@ -977,6 +978,37 @@ public class CBManagementController {
 			return result;
 		}
 	}
+	
+	@PreAuthorize("hasRole('tester')")
+	  @RequestMapping(value = "/testPlans/{testPlanId}/refreshTestContext", method = RequestMethod.POST)
+	  @ResponseBody
+	  public Map<String, Object> refreshTestPlanTestContextModels(HttpServletRequest request,
+	      @PathVariable("testPlanId") Long testPlanId,
+	      Authentication auth) {
+	    
+	        Map<String, Object> resultMap = new HashMap<String, Object>();
+	      try {
+			checkManagementSupport();
+		
+	      TestPlan testPlan = testPlanService.findOne(testPlanId);
+	      if (testPlan == null) {
+	        throw new Exception("Test Plan could not be found");
+	      }
+	      String username = auth.getName();
+	      if (!username.equals(testPlan.getAuthorUsername()) && !userService.isAdmin(username)) {
+	        throw new Exception("You do not have sufficient right to change this profile group");
+	      }
+	        
+	      resourceLoader.updateCBTestPlanConformanceProfileJson(testPlan);
+	      testPlanService.save(testPlan);
+
+	      return resultMap;
+	      } catch (Exception e) {
+	       resultMap.put("error", e.getMessage());
+	       return resultMap;
+	  	}
+	  }
+	
 
 	private void checkPermission(Long id, AbstractTestCase testObject, Principal p) throws Exception {
 		String username = userIdService.getCurrentUserName(p);
