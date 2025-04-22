@@ -37,7 +37,10 @@ import gov.nist.healthcare.resources.domain.XMLError;
 import gov.nist.healthcare.resources.xds.XMLResourcesValidator;
 import gov.nist.hit.core.hl7v2.service.FileValidationHandler;
 import gov.nist.hit.core.service.ResourceLoader;
+import gov.nist.hit.hl7.profile.validation.domain.GenericError;
 import gov.nist.hit.hl7.profile.validation.domain.ProfileValidationReport;
+import gov.nist.hit.hl7.profile.validation.domain.ProfileValidationReport.DocumentTarget;
+import gov.nist.hit.hl7.profile.validation.domain.ProfileValidationReport.ErrorType;
 import gov.nist.hit.hl7.profile.validation.service.impl.ValidationServiceImpl;
 
 @Service
@@ -371,6 +374,17 @@ public class FileValidationHandlerImpl implements FileValidationHandler {
 	    			report = vsi.validationXMLs(profile,constraintList,vs,coConstraint,slicing,vsb);
 	    			if(testName != null) {
 		    			report.setTestName(testName);
+	    			}
+	    		}else {
+	    			report = new ProfileValidationReport();
+	    			if (profile == null) {
+	    				report.addGenericError(new GenericError(ErrorType.MissingProfileFile, "The profile file with message id "+messageId+" could not be found." , DocumentTarget.PROFILE));
+	    			}
+	    			if (constraintList == null || constraintList.isEmpty() ) {
+	    				report.addGenericError(new GenericError(ErrorType.MissingConstraintFile, "The constraint file id "+ constraintId+ " could not be found", DocumentTarget.CONSTRAINT));
+	    			}
+	    			if (vs == null  ) {
+	    				report.addGenericError(new GenericError(ErrorType.MissingValueSetFile, "The value set file with id "+ valueSetLibraryId +" could not be found.", DocumentTarget.VALUESET));
 	    			}
 	    		}
 				reports.add(report);
