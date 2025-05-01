@@ -14,6 +14,9 @@ public interface HL7V2TestContextRepository extends JpaRepository<HL7V2TestConte
   @Query("select tc.conformanceProfile from TestContext tc where tc.id = :id")
   public ConformanceProfile findConformanceProfileByTestContextId(@Param("id") Long id);
   
+  @Query("select tc from TestContext tc where tc.id = :id")
+  public HL7V2TestContext findHL7V2TestContextByTestContextId(@Param("id") Long id);
+  
   @Modifying
   @Transactional(value = "transactionManager")
   @Query("delete from HL7V2TestContext tc where tc.preloaded = true")

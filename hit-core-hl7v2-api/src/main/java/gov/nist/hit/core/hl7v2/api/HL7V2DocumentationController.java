@@ -211,6 +211,84 @@ public class HL7V2DocumentationController {
     return null;
   }
 
+  
+  @RequestMapping(value = "/valuesetbindings.xml", method = RequestMethod.POST,
+	      produces = "application/xml", consumes = "application/x-www-form-urlencoded; charset=UTF-8")
+	  public String downloadValueSetBindings(
+	      @ApiParam(value = "the id of the value set bindings",
+	          required = true) @RequestParam("targetId") Long targetId,
+	      @ApiParam(value = "the title of the downloaded value set bindings",
+	          required = true) @RequestParam("targetTitle") String targetTitle,
+	      HttpServletRequest request, HttpServletResponse response) {
+	    try {
+	      logger.info("Downloading ValueSetBindings of element with id " + targetId);
+	      InputStream content = null;
+	      HL7V2TestContext testContext = testContextRepository.findOne(targetId);
+	      String valueSet = testContext.getValueSetBindings().getXml();
+	      content = IOUtils.toInputStream(valueSet, "UTF-8");
+	      response.setContentType("application/xml");
+	      targetTitle = targetTitle + "-" + "ValueSetBindings.xml";
+	      targetTitle = targetTitle.replaceAll(" ", "-");
+	      response.setHeader("Content-disposition", "attachment;filename=" + targetTitle);
+	      FileCopyUtils.copy(content, response.getOutputStream());
+	    } catch (Exception e) {
+	      logger.debug(e.getMessage(), e);
+	      throw new DownloadDocumentException("Failed to download the ValueSetBindings");
+	    }
+	    return null;
+	  }
+  
+  @RequestMapping(value = "/coconstraints.xml", method = RequestMethod.POST,
+	      produces = "application/xml", consumes = "application/x-www-form-urlencoded; charset=UTF-8")
+	  public String downloadCoConstraints(
+	      @ApiParam(value = "the id of the coconstraints",
+	          required = true) @RequestParam("targetId") Long targetId,
+	      @ApiParam(value = "the title of the downloaded coconstraints",
+	          required = true) @RequestParam("targetTitle") String targetTitle,
+	      HttpServletRequest request, HttpServletResponse response) {
+	    try {
+	      logger.info("Downloading CoConstraints of element with id " + targetId);
+	      InputStream content = null;
+	      HL7V2TestContext testContext = testContextRepository.findOne(targetId);
+	      String valueSet = testContext.getCoConstraints().getXml();
+	      content = IOUtils.toInputStream(valueSet, "UTF-8");
+	      response.setContentType("application/xml");
+	      targetTitle = targetTitle + "-" + "CoConstraints.xml";
+	      targetTitle = targetTitle.replaceAll(" ", "-");
+	      response.setHeader("Content-disposition", "attachment;filename=" + targetTitle);
+	      FileCopyUtils.copy(content, response.getOutputStream());
+	    } catch (Exception e) {
+	      logger.debug(e.getMessage(), e);
+	      throw new DownloadDocumentException("Failed to download the CoConstraints");
+	    }
+	    return null;
+	  }
+  
+  @RequestMapping(value = "/slicings.xml", method = RequestMethod.POST,
+	      produces = "application/xml", consumes = "application/x-www-form-urlencoded; charset=UTF-8")
+	  public String downloadSlicings(
+	      @ApiParam(value = "the id of the slicings",
+	          required = true) @RequestParam("targetId") Long targetId,
+	      @ApiParam(value = "the title of the downloaded slicings",
+	          required = true) @RequestParam("targetTitle") String targetTitle,
+	      HttpServletRequest request, HttpServletResponse response) {
+	    try {
+	      logger.info("Downloading CoConstraints of element with id " + targetId);
+	      InputStream content = null;
+	      HL7V2TestContext testContext = testContextRepository.findOne(targetId);
+	      String valueSet = testContext.getSlicings().getXml();
+	      content = IOUtils.toInputStream(valueSet, "UTF-8");
+	      response.setContentType("application/xml");
+	      targetTitle = targetTitle + "-" + "Slicings.xml";
+	      targetTitle = targetTitle.replaceAll(" ", "-");
+	      response.setHeader("Content-disposition", "attachment;filename=" + targetTitle);
+	      FileCopyUtils.copy(content, response.getOutputStream());
+	    } catch (Exception e) {
+	      logger.debug(e.getMessage(), e);
+	      throw new DownloadDocumentException("Failed to download the Slicings");
+	    }
+	    return null;
+	  }
 
 
 }

@@ -1,4 +1,4 @@
-package gov.nist.hit.core.hl7v2.domain.util;
+package gov.nist.hit.core.hl7v2.service.util;
 
 import java.io.BufferedReader;
 import java.io.InputStream;

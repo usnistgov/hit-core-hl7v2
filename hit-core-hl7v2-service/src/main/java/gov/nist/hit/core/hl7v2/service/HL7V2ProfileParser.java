@@ -31,11 +31,15 @@ import javax.xml.xpath.XPathExpressionException;
 import org.apache.commons.io.IOUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import gov.nist.hit.core.domain.ProfileElement;
 import gov.nist.hit.core.domain.ProfileModel;
+import gov.nist.hit.core.domain.ValueSetLibrary;
+import gov.nist.hit.core.domain.coconstraints.ByMessage;
+import gov.nist.hit.core.domain.coconstraints.CoConstraintContext;
 import gov.nist.hit.core.domain.constraints.ByID;
 import gov.nist.hit.core.domain.constraints.ByName;
 import gov.nist.hit.core.domain.constraints.ByNameOrByID;
@@ -43,10 +47,25 @@ import gov.nist.hit.core.domain.constraints.ConformanceStatement;
 import gov.nist.hit.core.domain.constraints.Constraints;
 import gov.nist.hit.core.domain.constraints.Context;
 import gov.nist.hit.core.domain.constraints.Predicate;
-import gov.nist.hit.core.hl7v2.domain.util.Util;
+import gov.nist.hit.core.domain.singlecodebindings.SingleCodeBinding;
+import gov.nist.hit.core.domain.singlecodebindings.SingleCodeBindings;
+import gov.nist.hit.core.domain.slicings.FieldSlicing;
+import gov.nist.hit.core.domain.slicings.FieldSlicingContext;
+import gov.nist.hit.core.domain.slicings.ProfileSlicing;
+import gov.nist.hit.core.domain.slicings.SegmentSlicing;
+import gov.nist.hit.core.domain.slicings.SegmentSlicingMessageContext;
+import gov.nist.hit.core.domain.valuesetbindings.ValueSetBinding;
+import gov.nist.hit.core.domain.valuesetbindings.ValueSetBindings;
+import gov.nist.hit.core.hl7v2.service.util.Util;
 import gov.nist.hit.core.service.ProfileParser;
+import gov.nist.hit.core.service.ValueSetLibrarySerializer;
 import gov.nist.hit.core.service.exception.ProfileParserException;
+import gov.nist.hit.core.service.impl.CoConstraintsParserImpl;
 import gov.nist.hit.core.service.impl.ConstraintsParserImpl;
+import gov.nist.hit.core.service.impl.SingleCodeBindingsParserImpl;
+import gov.nist.hit.core.service.impl.SlicingsParserImpl;
+import gov.nist.hit.core.service.impl.ValueSetBindingsParserImpl;
+import gov.nist.hit.core.service.impl.ValueSetLibrarySerializerImpl;
 import hl7.v2.profile.Component;
 import hl7.v2.profile.Composite;
 import hl7.v2.profile.Datatype;
@@ -80,16 +99,26 @@ public abstract class HL7V2ProfileParser extends ProfileParser {
 	private Map<String, ProfileElement> datatypesMap;
 	private Constraints conformanceStatements = null;
 	private Constraints predicates = null;
+	private ValueSetBindings valuesetBindings = null;
+	private ValueSetLibrary valueSetLibrary = null;
+	private SingleCodeBindings singleCodeBindings = null;
+	private CoConstraintContext coConstraints;
+	private ProfileSlicing profileSlicing;
+	
 	ConstraintsParserImpl constraintsParser = new ConstraintsParserImpl();
-
+	CoConstraintsParserImpl coConstraintsParser = new CoConstraintsParserImpl();
+	ValueSetBindingsParserImpl valuesetBindingsParser = new ValueSetBindingsParserImpl();
+	ValueSetLibrarySerializer valueSetLibrarySerializer = new ValueSetLibrarySerializerImpl();
+	SingleCodeBindingsParserImpl singleCodeBindingsParser = new SingleCodeBindingsParserImpl();
+	SlicingsParserImpl slicingsParser = new SlicingsParserImpl();
+	
 	@Override
 	/**
 	 * integrationProfileXml: integration profile xml content
 	 * conformanceProfileId: conformance profile id Options: constraints xml
 	 * content
 	 */
-	public ProfileModel parse(String integrationProfileXml, String conformanceProfileId, String... constraints)
-			throws ProfileParserException {
+	public ProfileModel parse(String integrationProfileXml, String conformanceProfileId, String... constraints)		{	 
 		try {
 			Profile p = null;
 			InputStream profileStream = IOUtils.toInputStream(integrationProfileXml);
@@ -98,10 +127,95 @@ public abstract class HL7V2ProfileParser extends ProfileParser {
 			return parse(m, constraints);
 		} catch (Exception e) {
 			e.printStackTrace();
-			throw new ProfileParserException(e.getMessage());
+			return null;
 		}
 	}
 
+	@Override
+	public ProfileModel parseEnhanced(String integrationProfileXml, String conformanceProfileId,
+			String constraintsXml,String additionalConstraintsXml, String valueSetsXML, String valueSetBindings, String coConstraints, String slicings)
+			throws ProfileParserException {
+		try {
+			Profile p = null;
+			InputStream profileStream = IOUtils.toInputStream(integrationProfileXml);
+			p = XMLDeserializer.deserialize(profileStream).get();
+			Message m = p.getMessage(conformanceProfileId);
+			return parseEnhanced(m, constraintsXml, additionalConstraintsXml,valueSetsXML, valueSetBindings,coConstraints, slicings);
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw new ProfileParserException(e.getMessage());
+		}
+	}
+	
+	
+	
+	@Override
+	public ProfileModel parseEnhanced(Object conformanceProfile, String constraintsXml,String additionalConstraintsXml,
+			String valueSetsXml, String valueSetBindingsXml, String coConstraintsXml,String slicingsXml) throws ProfileParserException {
+		try {
+			if (!(conformanceProfile instanceof Message)) {
+				throw new IllegalArgumentException(
+						"Conformance Profile is not a valid instanceof " + Message.class.getCanonicalName());
+			}
+			String c1Xml = constraintsXml;
+			String c2Xml = additionalConstraintsXml;
+			String vsXML = valueSetsXml;
+			String vsbXml = valueSetBindingsXml;
+			String coCoXml = coConstraintsXml;
+			
+			//get external VS list here and use it in valueset and coconstraint
+			java.util.List<String> externalVSIdentifiers = new ArrayList<String>();
+			if (vsXML != null) {
+				Document valueSetDoc = this.stringToDom(vsXML);
+				// list all external vs to identify them in vs bindings
+				if (valueSetDoc.getElementsByTagName("ExternalValueSetDefinitions") != null
+						&& valueSetDoc.getElementsByTagName("ExternalValueSetDefinitions").getLength() > 0) {
+					Element extVSDefs = (Element) valueSetDoc.getElementsByTagName("ExternalValueSetDefinitions").item(0);
+					NodeList valueSetDefNodes = extVSDefs.getElementsByTagName("ValueSetDefinition");
+					for (int i = 0; i < valueSetDefNodes.getLength(); i++) {
+						Element vsdef = (Element) valueSetDefNodes.item(i);
+						externalVSIdentifiers.add(vsdef.getAttribute("BindingIdentifier"));
+					}
+				}
+			}
+			
+			
+			
+			this.segmentsMap = new LinkedHashMap<String, ProfileElement>();
+			this.datatypesMap = new LinkedHashMap<String, ProfileElement>();
+			this.conformanceStatements = constraintsParser.confStatements(c1Xml);
+			this.predicates = constraintsParser.predicates(c1Xml);
+			
+			this.valueSetLibrary = valueSetLibrarySerializer.toObject(vsXML);
+			this.valuesetBindings = valuesetBindingsParser.valueSetBindings(vsbXml,vsXML);
+			
+			coConstraintsParser.setExternalVSIdentifiers(externalVSIdentifiers);
+			this.coConstraints = coConstraintsParser.coConstraints(coCoXml);
+			
+			this.profileSlicing = slicingsParser.slicings(slicingsXml);
+			
+			this.singleCodeBindings = singleCodeBindingsParser.singleCodeBindings(vsbXml);	
+			
+			if (c2Xml != null) {
+				Constraints conformanceStatements2 = constraintsParser.confStatements(c2Xml);
+				if (conformanceStatements2 != null) {
+					this.conformanceStatements = merge(this.conformanceStatements, conformanceStatements2);
+				}
+				Constraints predicates2 = constraintsParser.predicates(c2Xml);
+				if (predicates2 != null) {
+					this.predicates = merge(this.predicates, predicates2);
+				}
+			}
+			processEnhanced((Message) conformanceProfile);
+			return model;
+		} catch (XPathExpressionException e) {
+			throw new ProfileParserException(e.getLocalizedMessage());
+		} catch (CloneNotSupportedException e) {
+			throw new ProfileParserException(e.getLocalizedMessage());
+		}
+	}
+	
+	
 	/**
 	 * TODO: Include additional Constraints
 	 * 
@@ -209,6 +323,45 @@ public abstract class HL7V2ProfileParser extends ProfileParser {
 		return message;
 		
 	}
+	
+	private ProfileElement processEnhanced(Message m) throws XPathExpressionException, CloneNotSupportedException {
+		model = new ProfileModel();
+		ProfileElement message = new ProfileElement("FULL");
+		message.setType(TYPE_MESSAGE);
+		message.setRelevent(true);
+		message.setId(m.id());
+		model.setMessage(message);
+		message.setConformanceStatements(this.findConformanceStatements(this.conformanceStatements.getMessages(),
+				model.getMessage().getId(), model.getMessage().getName()));
+		message.setPredicates(this.findPredicates(this.predicates.getMessages(), model.getMessage().getId(),
+				model.getMessage().getName()));
+		message.setValuesetbindings(this.findValueSetBindings(this.valuesetBindings.getMessages(), 
+				model.getMessage().getId(),	model.getMessage().getName()));
+		message.setSinglecodebindings(this.findSingleCodeBindings(this.singleCodeBindings.getMessages(),model.getMessage().getId(),	model.getMessage().getName()));
+		
+		
+		model.addValueSetBindings(message.getValuesetbindings());
+		model.addSingleCodeBindings(message.getSinglecodebindings());
+		
+		scala.collection.immutable.List<SegRefOrGroup> children = m.structure();
+		if (children != null && !children.isEmpty()) {
+			Iterator<SegRefOrGroup> it = children.iterator();
+			while (it.hasNext()) {
+				processEnhanced(it.next(), message);
+			}
+		}
+								
+		model.setCoConstraints(findCoConstraints(model.getMessage().getId()));
+		filterSlicings(model.getMessage().getId());
+		model.setProfileSlicing(this.profileSlicing);
+		
+		
+		model.setDatatypes(this.datatypesMap);
+		model.setSegments(this.segmentsMap);		
+	
+		return message;
+		
+	}
 
 	/**
 	 * 
@@ -227,6 +380,19 @@ public abstract class HL7V2ProfileParser extends ProfileParser {
 			return process((SegmentRef) ref, ((SegmentRef) ref).req(), parentElement);
 		} else if (ref instanceof Group) {
 			return process((Group) ref, ((Group) ref).req(), parentElement);
+		} else {
+			throw new IllegalArgumentException("Unknown type of SegRefOrGroup");
+		}
+	}
+	
+	private ProfileElement processEnhanced(SegRefOrGroup ref, ProfileElement parentElement)
+			throws XPathExpressionException, CloneNotSupportedException {
+		if (ref == null)
+			return parentElement;
+		if (ref instanceof SegmentRef) {
+			return processEnhanced((SegmentRef) ref, ((SegmentRef) ref).req(), parentElement);
+		} else if (ref instanceof Group) {
+			return processEnhanced((Group) ref, ((Group) ref).req(), parentElement);
 		} else {
 			throw new IllegalArgumentException("Unknown type of SegRefOrGroup");
 		}
@@ -259,6 +425,44 @@ public abstract class HL7V2ProfileParser extends ProfileParser {
 		element.setPredicates(new ArrayList<Predicate>());
 		element.setConformanceStatements(new ArrayList<ConformanceStatement>());
 
+		// addMessageConstraints(element);
+		parentElement.getChildren().add(element);
+		return element;
+	}
+	
+	private ProfileElement processEnhanced(SegmentRef ref, Req req, ProfileElement parentElement)
+			throws XPathExpressionException, CloneNotSupportedException {
+		ProfileElement element = process(req, new ProfileElement(), parentElement);
+		Segment s = ref.ref();
+		element.setName(s.name());
+		element.setType(TYPE_SEGMENT_REF);
+		element.setDescription(s.desc());
+		// element.setIcon(ICON_SEGMENT);
+		element.setParent(parentElement);
+		element.setPosition(req.position() + "");
+		element.setId(UUID.randomUUID().toString());
+		ProfileElement segmentElement = null;
+		if (segmentsMap.containsKey(s.id())) {
+			segmentElement = segmentsMap.get(s.id());
+		} else {
+			segmentElement = processEnhanced(ref.ref(), ref.req());
+			segmentsMap.put(segmentElement.getId(), segmentElement);
+		}
+		segmentElement.setHide(req.hide());
+		segmentElement.setRelevent(segmentElement.isRelevent() || element.isRelevent());
+		element.setRef(segmentElement.getId());
+		// element.setChildren(segmentElement.getChildren());
+		element.setPath(segmentElement.getName());
+
+		element.setPredicates(new ArrayList<Predicate>());
+		element.setConformanceStatements(new ArrayList<ConformanceStatement>());
+
+		
+					
+
+		
+		
+		
 		// addMessageConstraints(element);
 		parentElement.getChildren().add(element);
 		return element;
@@ -324,6 +528,63 @@ public abstract class HL7V2ProfileParser extends ProfileParser {
 			Iterator<Field> it = children.iterator();
 			while (it.hasNext()) {
 				process(it.next(), element);
+			}
+		}
+		return element;
+	}
+	
+	private ProfileElement processEnhanced(Segment s, Req req) throws XPathExpressionException, CloneNotSupportedException {
+		ProfileElement element = new ProfileElement();
+		element.setName(s.name());
+		element.setType(TYPE_SEGMENT);
+		element.setDescription(s.desc());
+		// element.setIcon(ICON_SEGMENT);
+		element.setId(s.id());
+		element.setDynamicMaps(dynaMap(s));
+		element.setPredicates(this.findPredicates(this.predicates.getSegments(), s.id(), s.name()));
+		element.setConformanceStatements(this.findConformanceStatements(this.conformanceStatements.getSegments(), s.id(), s.name()));
+		element.setValuesetbindings(this.findValueSetBindings(this.valuesetBindings.getSegments(), s.id(),	s.name()));
+		element.setSinglecodebindings(this.findSingleCodeBindings(this.singleCodeBindings.getSegments(),s.id(),	s.name()));
+		model.addValueSetBindings(element.getValuesetbindings());
+		model.addSingleCodeBindings(element.getSinglecodebindings());
+		
+//		String tables = null;
+//		ArrayList<ValueSetBinding> vsbList = this.findValueSetBindings(this.valuesetBindings.getSegments(), s.id(),	s.name());
+//		Map<String, ArrayList<String>> vsMap = new HashMap<String, ArrayList<String>>();
+//		
+//		for (ValueSetBinding vsb : vsbList) {
+//			Document valueSetBindingsContextDoc = stringToDom(vsb.getBindings());
+//			NodeList bindings = valueSetBindingsContextDoc.getElementsByTagName("Binding");
+//			if (bindings.getLength()>0) {
+//				tables = "";
+//			}
+//			for (int i = 0; i < bindings.getLength(); i++) {
+//				  if (i>0) {
+//					  tables += ":";
+//				  }
+//		          Element elm = (Element) bindings.item(i);
+//		          tables +=elm.getAttribute("BindingIdentifier");
+//		     }						
+//			
+//			String target =vsb.getValueSetBindingTarget();
+//			String targets = target.replaceAll("\\[.*?\\]", "");
+//			if (vsMap.get(targets) == null) {
+//				vsMap.put(targets, new ArrayList<String>());
+//			}
+//			vsMap.get(targets).add(tables);
+//			if (target.equals(".")) {
+//				element.setTable(tables);
+//			}
+//		}			
+//		element.setVsMap(vsMap);
+		
+		scala.collection.immutable.List<Field> children = s.fields();
+		if (children != null && !children.isEmpty()) {
+			Iterator<Field> it = children.iterator();
+			while (it.hasNext()) {
+				Field field = it.next();
+				field.req().position();
+				processEnhanced(field, element);
 			}
 		}
 		return element;
@@ -401,6 +662,61 @@ public abstract class HL7V2ProfileParser extends ProfileParser {
 		}
 		return element;
 	}
+	
+	/**
+	 * 
+	 * @param g
+	 * @param req
+	 * @param parentElement
+	 * @param model
+	 * @param segmentsMap
+	 * @return
+	 * @throws XPathExpressionException
+	 * @throws CloneNotSupportedException
+	 */
+	private ProfileElement processEnhanced(Group g, Req req, ProfileElement parentElement)
+			throws XPathExpressionException, CloneNotSupportedException {
+		ProfileElement element = process(req, new ProfileElement(), parentElement);
+		element.setType(TYPE_GROUP);
+		// element.setIcon(ICON_GROUP);
+		element.setName(g.name());
+		element.setDescription(g.name());
+		element.setParent(parentElement);
+		element.setPosition(req.position() + "");
+		element.setId(g.id());
+		element.setPredicates(this.findPredicates(this.predicates.getGroups(), g.id(), g.name()));
+		element.setConformanceStatements(
+				this.findConformanceStatements(this.conformanceStatements.getGroups(), g.id(), g.name()));
+		element.setValuesetbindings(this.findValueSetBindings(this.valuesetBindings.getGroups(), 
+				g.id(),	g.name()));
+		element.setSinglecodebindings(this.findSingleCodeBindings(this.singleCodeBindings.getGroups(),g.id(),g.name()));
+		
+		// String targetPath = getTargetPath(element);
+		// if (!targetPath.equals("")) {
+		// for (ConformanceStatement cs :
+		// this.model.getMessage().getConformanceStatements()) {
+		// if (cs.getConstraintTarget().equals(targetPath)) {
+		// element.getConformanceStatements().add(cs);
+		// }
+		// }
+		//
+		// for (Predicate p : this.model.getMessage().getPredicates()) {
+		// if (p.getConstraintTarget().equals(targetPath)) {
+		// element.getPredicates().add(p);
+		// }
+		// }
+		// }
+
+		parentElement.getChildren().add(element);
+		scala.collection.immutable.List<SegRefOrGroup> children = g.structure();
+		if (children != null) {
+			Iterator<SegRefOrGroup> it = children.iterator();
+			while (it.hasNext()) {
+				processEnhanced(it.next(), element);
+			}
+		}
+		return element;
+	}
 
 	private String getTargetPath(ProfileElement element) {
 		if (element == null || element.getType().equals(TYPE_MESSAGE))
@@ -416,6 +732,36 @@ public abstract class HL7V2ProfileParser extends ProfileParser {
 	 * @return
 	 */
 	private ProfileElement process(Req req, ProfileElement element, ProfileElement parent) {
+		if (req == null)
+			return element;
+		Range card = Util.getOption(req.cardinality());
+		Usage usage = req.usage();
+		if (usage != null) {
+			element.setUsage(req.usage().toString());
+		}
+		if (card != null) {
+			element.setMin(card.min() + "");
+			element.setMax(card.max());
+		}
+		Range length = Util.getOption(req.length());
+		if (length != null) {
+			element.setMinLength(length.min() + "");
+			element.setMaxLength(length.max());
+		}
+		element.setHide(req.hide());
+		boolean relevent = relevent(element, parent);
+		element.setRelevent(relevent);
+
+		return element;
+	}
+	
+	/**
+	 * 
+	 * @param req
+	 * @param element
+	 * @return
+	 */
+	private ProfileElement processEnhanced(Req req, ProfileElement element, ProfileElement parent) {
 		if (req == null)
 			return element;
 		Range card = Util.getOption(req.cardinality());
@@ -464,6 +810,52 @@ public abstract class HL7V2ProfileParser extends ProfileParser {
 		ProfileElement datatypeElement = process(f.datatype());
 		element.setDatatype(datatypeElement.getId()); // use id for flavors
 	}
+	
+	/**
+	 * 
+	 * @param f
+	 * @param parentElement
+	 * @throws XPathExpressionException
+	 * @throws CloneNotSupportedException
+	 */
+	private void processEnhanced(Field f, ProfileElement parent) throws XPathExpressionException, CloneNotSupportedException {
+		if (f == null)
+			return;
+		ProfileElement element = process(f.req(), new ProfileElement(), parent);
+		element.setName(f.name());
+		element.setType(TYPE_FIELD);
+		element.setId(UUID.randomUUID().toString());
+		element.setParent(parent);
+		String table = table(f.req());
+		if (table != null) {
+			element.setTable(table);
+		}
+		
+//		Map<String, ArrayList<String>> vsMap = new HashMap<String, ArrayList<String>>();
+//		Map<String, ArrayList<String>> parentVsInfo = parent.getVsMap();		
+//		for (Map.Entry<String,ArrayList<String>> entry : parentVsInfo.entrySet())  {
+//			if (entry.getKey().equals(f.req().position()+"")) {		
+//				if (table != null) {
+//					element.setTable(table +":"+ StringUtils.join(entry.getValue(), ":"));
+//				}else {
+//					element.setTable(StringUtils.join(entry.getValue(), ":"));
+//				}
+//				
+//			}else {
+//				//copy used vsb at this level to vsMap
+//				vsMap.put(entry.getKey(), entry.getValue());
+//			}
+//			
+//		}						
+//						
+		
+		element.setPosition(f.req().position() + "");
+		element.setPath(parent.getName() + "-" + f.req().position());
+				
+		parent.getChildren().add(element);
+		ProfileElement datatypeElement = processEnhanced(f.datatype());
+		element.setDatatype(datatypeElement.getId()); // use id for flavors
+	}
 
 	private String table(Req req) {
 		List<ValueSetSpec> vsSpec = req.vsSpec();
@@ -488,6 +880,8 @@ public abstract class HL7V2ProfileParser extends ProfileParser {
 			element.setPredicates(this.findPredicates(this.predicates.getDatatypes(), d.id(), d.name()));
 			element.setConformanceStatements(
 					this.findConformanceStatements(this.conformanceStatements.getDatatypes(), d.id(), d.name()));
+			
+			
 			datatypesMap.put(d.id(), element);
 			if (d instanceof Composite) {
 				Composite c = (Composite) d;
@@ -496,6 +890,41 @@ public abstract class HL7V2ProfileParser extends ProfileParser {
 					Iterator<Component> it = children.iterator();
 					while (it.hasNext()) {
 						process(it.next(), element);
+					}
+				}
+			}
+
+			return element;
+		} else {
+			return datatypesMap.get(d.id());
+		}
+
+	}
+	
+	private ProfileElement processEnhanced(Datatype d) throws XPathExpressionException, CloneNotSupportedException {
+		if (!datatypesMap.containsKey(d.id())) {
+			ProfileElement element = new ProfileElement();
+			element.setId(d.id());
+			element.setName(d.name());
+			element.setDescription(d.desc());
+			element.setType(TYPE_DATATYPE);
+			element.setRelevent(true);
+			element.setPredicates(this.findPredicates(this.predicates.getDatatypes(), d.id(), d.name()));
+			element.setConformanceStatements(this.findConformanceStatements(this.conformanceStatements.getDatatypes(), d.id(), d.name()));			
+			element.setValuesetbindings(this.findValueSetBindings(this.valuesetBindings.getDatatypes(), d.id(),	d.name()));
+			element.setSinglecodebindings(this.findSingleCodeBindings(this.singleCodeBindings.getDatatypes(),d.id(),d.name()));
+			
+			model.addValueSetBindings(element.getValuesetbindings());
+			model.addSingleCodeBindings(element.getSinglecodebindings());
+			
+			datatypesMap.put(d.id(), element);
+			if (d instanceof Composite) {
+				Composite c = (Composite) d;
+				scala.collection.immutable.List<Component> children = c.components();
+				if (children != null) {
+					Iterator<Component> it = children.iterator();
+					while (it.hasNext()) {
+						processEnhanced(it.next(), element);
 					}
 				}
 			}
@@ -525,6 +954,28 @@ public abstract class HL7V2ProfileParser extends ProfileParser {
 		element.setPath(parent.getPath() + "." + c.req().position());
 		parent.getChildren().add(element);
 		ProfileElement datatypeElement = process(c.datatype());
+		element.setChildren(ProfileElement.clone(datatypeElement.getChildren()));
+		return element;
+	}
+	
+	private ProfileElement processEnhanced(Component c, ProfileElement parent)
+			throws XPathExpressionException, CloneNotSupportedException {
+		if (c == null)
+			return parent;
+		ProfileElement element = new ProfileElement();
+		process(c.req(), element, parent);
+		element.setName(c.name());
+		element.setId(UUID.randomUUID().toString());
+		element.setType(TYPE_COMPONENT);
+		String table = table(c.req());
+		if (table != null)
+			element.setTable(table);
+		element.setDatatype(c.datatype().id());
+		element.setPosition(c.req().position() + "");
+		element.setParent(parent);
+		element.setPath(parent.getPath() + "." + c.req().position());
+		parent.getChildren().add(element);
+		ProfileElement datatypeElement = processEnhanced(c.datatype());
 		element.setChildren(ProfileElement.clone(datatypeElement.getChildren()));
 		return element;
 	}
@@ -674,5 +1125,115 @@ public abstract class HL7V2ProfileParser extends ProfileParser {
 		}
 		return result;
 	}
+	
+	private ArrayList<ValueSetBinding> findValueSetBindings(gov.nist.hit.core.domain.valuesetbindings.Context context, String id, String name) {
+		Set<gov.nist.hit.core.domain.valuesetbindings.ByNameOrByID> byNameOrByIDs = context.getByNameOrByIDs();
+		ArrayList<ValueSetBinding> result = new ArrayList<ValueSetBinding>();
+		for (gov.nist.hit.core.domain.valuesetbindings.ByNameOrByID byNameOrByID : byNameOrByIDs) {
+			if (byNameOrByID instanceof gov.nist.hit.core.domain.valuesetbindings.ByID) {
+				gov.nist.hit.core.domain.valuesetbindings.ByID byID = (gov.nist.hit.core.domain.valuesetbindings.ByID) byNameOrByID;
+				if (byID.getByID().equals(id)) {
+					for (ValueSetBinding c : byID.getValueSetBindings()) {
+						result.add(c);
+					}
+				}
+			} else if (byNameOrByID instanceof gov.nist.hit.core.domain.valuesetbindings.ByName) {
+				gov.nist.hit.core.domain.valuesetbindings.ByName byName = (gov.nist.hit.core.domain.valuesetbindings.ByName) byNameOrByID;
+				if (byName.getByName().equals(name)) {
+					for (ValueSetBinding c : byName.getValueSetBindings()) {
+						result.add(c);
+					}
+				}
+			}
+		}
+		return result;
+	}
+	
+	private ArrayList<SingleCodeBinding> findSingleCodeBindings(gov.nist.hit.core.domain.singlecodebindings.Context context, String id, String name) {
+		Set<gov.nist.hit.core.domain.singlecodebindings.ByNameOrByID> byNameOrByIDs = context.getByNameOrByIDs();
+		ArrayList<SingleCodeBinding> result = new ArrayList<SingleCodeBinding>();
+		for (gov.nist.hit.core.domain.singlecodebindings.ByNameOrByID byNameOrByID : byNameOrByIDs) {
+			if (byNameOrByID instanceof gov.nist.hit.core.domain.singlecodebindings.ByID) {
+				gov.nist.hit.core.domain.singlecodebindings.ByID byID = (gov.nist.hit.core.domain.singlecodebindings.ByID) byNameOrByID;
+				if (byID.getByID().equals(id)) {
+					for (SingleCodeBinding c : byID.getSingleCodeBindings()) {
+						result.add(c);
+					}
+				}
+			} else if (byNameOrByID instanceof gov.nist.hit.core.domain.singlecodebindings.ByName) {
+				gov.nist.hit.core.domain.singlecodebindings.ByName byName = (gov.nist.hit.core.domain.singlecodebindings.ByName) byNameOrByID;
+				if (byName.getByName().equals(name)) {
+					for (SingleCodeBinding c : byName.getSingleCodeBindings()) {
+						result.add(c);
+					}
+				}
+			}
+		}
+		return result;
+	}
+	
+	private ArrayList<gov.nist.hit.core.domain.coconstraints.Context> findCoConstraints(String messageId) {
+		if (this.coConstraints == null) return null;
+		ArrayList<gov.nist.hit.core.domain.coconstraints.Context>  list = new ArrayList<gov.nist.hit.core.domain.coconstraints.Context>();
+		for(ByMessage byMessage :this.coConstraints.getByMessages()) {
+			if (byMessage.getId().equals(messageId)) {
+				list.addAll(byMessage.getContexts());
+			}
+		}
+		return list;
+	}
+	
+	//include only SegmentSlicing and FieldSlicing that are present in the message
+	private void filterSlicings(String messageId) {
+		if (this.profileSlicing != null && profileSlicing.getSegmentSlicing() != null) {
+			SegmentSlicing ssl= profileSlicing.getSegmentSlicing();	
+			if (ssl != null) {
+				java.util.Iterator<SegmentSlicingMessageContext> iterator = ssl.getMessages().iterator();
+		        while (iterator.hasNext()) {
+		        	SegmentSlicingMessageContext message = iterator.next();
+		            if (!message.getId().equals(messageId)) {
+		                iterator.remove(); // remove SegmentSlicingMessageContext that are not for this message ID
+		            }
+		        }	
+			}
+	        
+			
+			FieldSlicing fsl= profileSlicing.getFieldSlicing();		
+			if(fsl != null) {
+				java.util.Iterator<FieldSlicingContext> iterator2 = fsl.getSegmentContexts().iterator();
+		        while (iterator2.hasNext()) {
+		        	FieldSlicingContext segment = iterator2.next();
+		            if (!this.segmentsMap.containsKey(segment.getId())) {
+		                iterator2.remove(); // remove FieldSlicingContext that are not for this message ID
+		            }
+		        }	
+			}
+		}
+	}
+	
+	
+	
+	
+	
+	  private Document stringToDom(String xmlSource) {
+		    DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+		    factory.setXIncludeAware(false);
+		    factory.setNamespaceAware(true);
+		    factory.setIgnoringComments(false);
+		    factory.setIgnoringElementContentWhitespace(true);
+		    DocumentBuilder builder;
+		    try {
+		      builder = factory.newDocumentBuilder();
+		      return builder.parse(new InputSource(new StringReader(xmlSource)));
+		    } catch (ParserConfigurationException e) {
+		      e.printStackTrace();
+		    } catch (SAXException e) {
+		      e.printStackTrace();
+		    } catch (IOException e) {
+		      e.printStackTrace();
+		    }
+		    return null;
+		  }
+	
 
 }

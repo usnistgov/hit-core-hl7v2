@@ -24,7 +24,7 @@ import gov.nist.hit.core.domain.MessageParserCommand;
 import gov.nist.hit.core.domain.TestContext;
 import gov.nist.hit.core.hl7v2.domain.HL7V2TestContext;
 import gov.nist.hit.core.hl7v2.domain.MessageElementData;
-import gov.nist.hit.core.hl7v2.domain.util.Util;
+import gov.nist.hit.core.hl7v2.service.util.Util;
 import gov.nist.hit.core.service.MessageParser;
 import gov.nist.hit.core.service.exception.MessageParserException;
 import hl7.v2.instance.ComplexComponent;

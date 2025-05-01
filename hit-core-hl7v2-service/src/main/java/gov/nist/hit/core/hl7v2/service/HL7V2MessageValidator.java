@@ -12,16 +12,12 @@
 package gov.nist.hit.core.hl7v2.service;
 
 import java.io.InputStream;
-import java.io.Reader;
-import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.io.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import gov.nist.auth.hit.core.domain.Account;
 import gov.nist.healthcare.unified.enums.Context;
 import gov.nist.healthcare.unified.model.EnhancedReport;
 import gov.nist.healthcare.unified.proxy.ValidationProxy;
@@ -36,7 +32,6 @@ import gov.nist.hit.core.service.MessageValidator;
 import gov.nist.hit.core.service.ValidationLogService;
 import gov.nist.hit.core.service.exception.MessageException;
 import gov.nist.hit.core.service.exception.MessageValidationException;
-import gov.nist.hit.core.service.exception.ValidationReportException;
 import gov.nist.hit.logging.HITStatsLogger;
 import hl7.v2.validation.content.ConformanceContext;
 import hl7.v2.validation.content.DefaultConformanceContext;
@@ -53,6 +48,9 @@ public abstract class HL7V2MessageValidator implements MessageValidator {
 	
 	@Autowired
 	private AccountService accountService;
+	
+	@Autowired
+	private ValidationProxy vp;
 
 	@Override
 	public MessageValidationResult validate(TestContext testContext, MessageValidationCommand command)
@@ -81,57 +79,140 @@ public abstract class HL7V2MessageValidator implements MessageValidator {
 			throws MessageValidationException {
 		try {
 			if (testContext instanceof HL7V2TestContext) {
+				
+				vp.setInfo(getValidationServiceName(), getProviderName());
+				
 				HL7V2TestContext v2TestContext = (HL7V2TestContext) testContext;
+				EnhancedReport report = null;
 				String contextType = command.getContextType();
 				String message = getMessageContent(command);
 				String conformanceProfielId = v2TestContext.getConformanceProfile().getSourceId();
-				String valueSets = v2TestContext.getVocabularyLibrary().getXml();
-				String c1 = v2TestContext.getConstraints() != null ? v2TestContext.getConstraints().getXml() : null;
-				String c2 = v2TestContext.getAddditionalConstraints() != null
-						? v2TestContext.getAddditionalConstraints().getXml() : null;
-				InputStream c1Stream = c1 != null ? IOUtils.toInputStream(c1) : null;
-				InputStream c2Stream = c2 != null ? IOUtils.toInputStream(c2) : null;
-				List<InputStream> cStreams = new ArrayList<InputStream>();
-				if (c1Stream != null)
-					cStreams.add(c1Stream);
-				if (c2Stream != null)
-					cStreams.add(c2Stream);
-				ConformanceContext c = getConformanceContext(cStreams);
-				ValueSetLibrary vsLib = valueSets != null ? getValueSetLibrary(IOUtils.toInputStream(valueSets)) : null;
-				ValidationProxy vp = new ValidationProxy(getValidationServiceName(), getProviderName());
-				EnhancedReport report;
-				Reader configuration = null;
-				Domain domain = domainService.findOneByKey(v2TestContext.getDomain());
-				if (domain != null) {
-					String conf = domain.getValidationConfiguration();
-					if (conf != null) {
-						configuration = new StringReader(conf);
-					}				
-				}
 				
 				
-				Account account = null;
+				
 				String username = accountService.findOne(command.getUserId()) != null ? accountService.findOne(command.getUserId()).getUsername() : "guest";
 				String organization = "";
 				String operation = "message validation";
 				
-					
-								
-				if (configuration != null) {
-					report = vp.validate(message, v2TestContext.getConformanceProfile().getXml(), c, vsLib,
-							conformanceProfielId, Context.valueOf(contextType),configuration);
-					Map<String, String> env = System.getenv();			       
-			        for (Map.Entry<String, String> entry : env.entrySet()) {
-			            System.out.println(entry.getKey() + " : " + entry.getValue());
-			        }
-					
-					HITStatsLogger.log(username, organization, operation, testContext.getDomain());
-					
-				}else {
-					report = vp.validate(message, v2TestContext.getConformanceProfile().getXml(), c, vsLib,
-							conformanceProfielId, Context.valueOf(contextType));
-					HITStatsLogger.log(username, organization, operation, testContext.getDomain());
+				
+				String c1 = v2TestContext.getConstraints() != null ? v2TestContext.getConstraints().getXml() : null;
+				String c2 = v2TestContext.getAddditionalConstraints() != null
+						? v2TestContext.getAddditionalConstraints().getXml() : null;
+				
+				
+				//for external validation
+				List<String> constraintList = new ArrayList<String>();
+				constraintList.add(c1);
+				constraintList.add(c2);
+				
+				
+//				InputStream c1Stream = c1 != null ? IOUtils.toInputStream(c1, StandardCharsets.UTF_8) : null;
+//				InputStream c1Stream_2 = c1 != null ? IOUtils.toInputStream(c1, StandardCharsets.UTF_8) : null;
+//				InputStream c2Stream = c2 != null ? IOUtils.toInputStream(c2, StandardCharsets.UTF_8) : null;
+//				InputStream c2Stream_2 = c2 != null ? IOUtils.toInputStream(c2, StandardCharsets.UTF_8) : null;
+//
+//				List<InputStream> cStreams = new ArrayList<InputStream>();				
+//				if (c1Stream != null)
+//					cStreams.add(c1Stream);
+//				if (c2Stream != null)
+//					cStreams.add(c2Stream);
+//				List<InputStream> cStreams_2 = new ArrayList<InputStream>();				
+//				if (c1Stream_2 != null)
+//					cStreams_2.add(c1Stream_2);
+//				if (c2Stream_2 != null)
+//					cStreams_2.add(c2Stream_2);
+//				
+//				ConformanceContext c = getConformanceContext(cStreams);				
+//				ValidationProxy vp = new ValidationProxy(getValidationServiceName(), getProviderName());
+				
+				
+				
+//				Reader configuration = null;
+				String conf = null;
+				Domain domain = domainService.findOneByKey(v2TestContext.getDomain());
+				if (domain != null) {
+					conf = domain.getValidationConfiguration();
+//					if (conf != null) {
+//						configuration = new StringReader(conf);
+//					}				
 				}
+				
+						
+								
+//				InputStream valueSetLibraryIS = null ,valueSetBindingsIS = null,coConstraintsIS= null,slicingsIS = null;
+//				if (v2TestContext.getVocabularyLibrary() != null) {
+//					valueSetLibraryIS = IOUtils.toInputStream(v2TestContext.getVocabularyLibrary().getXml(), StandardCharsets.UTF_8);
+//				}
+//				if (v2TestContext.getValueSetBindings() != null) {
+//					valueSetBindingsIS = IOUtils.toInputStream(v2TestContext.getValueSetBindings().getXml(), StandardCharsets.UTF_8);
+//				}
+//				if (v2TestContext.getCoConstraints() != null) {
+//					coConstraintsIS = IOUtils.toInputStream(v2TestContext.getCoConstraints().getXml(), StandardCharsets.UTF_8);
+//				}
+//				if (v2TestContext.getSlicings() != null) {
+//					slicingsIS = IOUtils.toInputStream(v2TestContext.getSlicings().getXml(), StandardCharsets.UTF_8);
+//				}
+				
+				
+
+							
+				//configure external value set validation/fetching
+//				SSLContextBuilder builder = new SSLContextBuilder();
+//				RequestConfig requestConfig = RequestConfig.custom().setConnectionRequestTimeout(2 * 1000).setConnectTimeout(2 * 1000)
+//						.setSocketTimeout(2 * 1000).build();
+//				SSLConnectionSocketFactory socketFactory = new SSLConnectionSocketFactory(builder.build(), NoopHostnameVerifier.INSTANCE);
+//
+//				CloseableHttpClient httpClient = HttpClients.custom().setDefaultRequestConfig(requestConfig).disableCookieManagement()
+//						.setSSLSocketFactory(socketFactory).addInterceptorFirst(new HttpRequestInterceptor() {
+//							@Override
+//							public void process(HttpRequest request, HttpContext context) throws HttpException, IOException {
+//								context.getAttribute(ExternalValueSetClient.HTTP_CONTEXT_VS_BINDING_IDENTIFIER).toString();
+//								request.addHeader("X-API-KEY", v2TestContext
+//										.getKeyFromIdentifier(context.getAttribute(ExternalValueSetClient.HTTP_CONTEXT_VS_BINDING_IDENTIFIER).toString()));
+//							}
+//						}).build();
+				
+					
+						
+				//get hl7v2 validation version if specified
+				String validationServiceVersion = null;
+				if (v2TestContext.getHl7v2ValidationVersion() != null && !v2TestContext.getHl7v2ValidationVersion().isEmpty()) {
+					validationServiceVersion = v2TestContext.getHl7v2ValidationVersion();
+				}else if (domain.getHl7v2ValidationVersion() != null && !domain.getHl7v2ValidationVersion().isEmpty()) {
+					validationServiceVersion = domain.getHl7v2ValidationVersion();
+				}
+				
+				
+					
+//						call external service
+						report = vp.validate(message,
+							v2TestContext.getConformanceProfile().getXml(),
+							v2TestContext.getVocabularyLibrary().getXml(),
+							constraintList,
+							v2TestContext.getValueSetBindings() != null ? v2TestContext.getValueSetBindings().getXml() : null,
+							v2TestContext.getCoConstraints() != null ? v2TestContext.getCoConstraints().getXml() : null,
+							v2TestContext.getSlicings() != null ? v2TestContext.getSlicings().getXml() : null,
+							conformanceProfielId,
+							Context.valueOf(contextType),
+							conf,
+							v2TestContext.getApiHashMap(),validationServiceVersion);
+					
+						//not local validation dependency
+//						report = vp.validateNew(message,
+//								v2TestContext.getConformanceProfile().getXml(),
+//								valueSetLibraryIS,
+//								cStreams_2,
+//								valueSetBindingsIS,
+//								coConstraintsIS,
+//								slicingsIS,
+//								conformanceProfielId,
+//								Context.valueOf(contextType),
+//								configuration,httpClient);
+												
+					HITStatsLogger.log(username, organization, operation, testContext.getDomain());					
+		
+				
+				
 				if (report != null) {
 					Map<String, String> nav = command.getNav();
 					if (nav != null && !nav.isEmpty()) {

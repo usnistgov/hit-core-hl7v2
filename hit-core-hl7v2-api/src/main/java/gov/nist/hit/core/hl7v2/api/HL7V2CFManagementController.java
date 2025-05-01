@@ -17,6 +17,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringReader;
 import java.security.Principal;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -29,6 +30,14 @@ import java.util.UUID;
 import javax.annotation.PostConstruct;
 import javax.servlet.ServletRequest;
 import javax.servlet.http.HttpServletRequest;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpression;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -39,7 +48,6 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
@@ -52,6 +60,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
 import gov.nist.hit.core.domain.CFTestPlan;
 import gov.nist.hit.core.domain.CFTestStep;
@@ -59,19 +71,26 @@ import gov.nist.hit.core.domain.CFTestStepGroup;
 import gov.nist.hit.core.domain.GVTSaveInstance;
 import gov.nist.hit.core.domain.Message;
 import gov.nist.hit.core.domain.ResourceUploadResult;
-import gov.nist.hit.core.domain.TestCaseWrapper;
 import gov.nist.hit.core.domain.TestContext;
-import gov.nist.hit.core.domain.TestPlan;
 import gov.nist.hit.core.domain.TestScope;
 import gov.nist.hit.core.domain.UploadStatus;
-import gov.nist.hit.core.domain.UploadedProfileModel;
+import gov.nist.hit.core.domain.ValueSetDefinition;
+import gov.nist.hit.core.hl7v2.domain.APIKey;
+import gov.nist.hit.core.hl7v2.domain.HL7V2TestContext;
+import gov.nist.hit.core.hl7v2.domain.TestCaseWrapper;
+import gov.nist.hit.core.hl7v2.domain.UploadedProfileModel;
 import gov.nist.hit.core.hl7v2.service.FileValidationHandler;
+import gov.nist.hit.core.hl7v2.service.HL7V2TestContextService;
 import gov.nist.hit.core.hl7v2.service.PackagingHandler;
 import gov.nist.hit.core.hl7v2.service.impl.FileValidationHandlerImpl.InvalidFileTypeException;
 import gov.nist.hit.core.hl7v2.service.impl.HL7V2ProfileParserImpl;
+import gov.nist.hit.core.hl7v2.service.impl.HL7V2ResourceLoaderImpl;
+import gov.nist.hit.core.repo.CoConstraintsRepository;
 import gov.nist.hit.core.repo.ConstraintsRepository;
 import gov.nist.hit.core.repo.IntegrationProfileRepository;
+import gov.nist.hit.core.repo.SlicingsRepository;
 import gov.nist.hit.core.repo.UserTestCaseGroupRepository;
+import gov.nist.hit.core.repo.ValueSetBindingsRepository;
 import gov.nist.hit.core.repo.VocabularyLibraryRepository;
 import gov.nist.hit.core.service.AppInfoService;
 import gov.nist.hit.core.service.BundleHandler;
@@ -119,6 +138,15 @@ public class HL7V2CFManagementController {
 
   @Autowired
   private VocabularyLibraryRepository vsRepository;
+  
+  @Autowired
+  private SlicingsRepository slicingsRepository;
+  
+  @Autowired
+  private ValueSetBindingsRepository vsbRepository;
+  
+  @Autowired
+  private CoConstraintsRepository cocsRepository;
 
   @Autowired
   private UserIdService userIdService;
@@ -146,6 +174,9 @@ public class HL7V2CFManagementController {
   
   @Autowired
   private CFTestStepGroupService testStepGroupService;
+  
+  @Autowired
+  private HL7V2ResourceLoaderImpl resourceLoader;
 
 	@PostConstruct
 	  public void init() {
@@ -256,9 +287,10 @@ public class HL7V2CFManagementController {
 			FileUtils.writeStringToFile(profileFile, content);
 
 		
-			List<UploadedProfileModel> list = packagingHandler.getUploadedProfiles(content);
+			//TODO get profile list when validation is done.
+//			List<UploadedProfileModel> list = packagingHandler.getUploadedProfiles(content,null,null,null);
 			resultMap.put("success", true);
-			resultMap.put("profiles", list);
+//			resultMap.put("profiles", list);
 					
 
 			return resultMap;
@@ -401,6 +433,180 @@ public class HL7V2CFManagementController {
 		}
 	}
 
+	
+	 /**
+	   * Upload a single XML coConstraints file and may returns errors
+	   * 
+	   * @param request Client request
+	   * @param part coConstraints XML file
+	   * @param token Token used for saving file
+	   * @param p Principal
+	   * @return May return a list of errors
+	   * @throws Exception
+	   */
+		@PreAuthorize("hasRole('tester')")
+		@RequestMapping(value = "/uploadCoConstraints", method = RequestMethod.POST, consumes = { "multipart/form-data" })
+		@ResponseBody
+		public Map<String, Object> uploadCoContraints(ServletRequest request, @RequestPart("file") MultipartFile part,
+				@RequestParam("token") String token, Principal p) throws Exception {
+			checkManagementSupport();
+
+			Map<String, Object> resultMap = new HashMap<String, Object>();
+			try {
+				String filename = part.getOriginalFilename();
+				String extension = filename.substring(filename.lastIndexOf(".") + 1);
+				if (!extension.equalsIgnoreCase("xml")) {
+					throw new MessageUploadException(
+				            "Unsupported content type. Supported content types are: '.xml' ");
+				}
+
+				String userName = userIdService.getCurrentUserName(p);
+				if (userName == null)
+					throw new NoUserFoundException("User could not be found");
+				
+				ByteArrayOutputStream baos = new ByteArrayOutputStream();
+				org.apache.commons.io.IOUtils.copy(part.getInputStream(), baos);
+				byte[] bytes = baos.toByteArray();
+				String content = IOUtils.toString(new ByteArrayInputStream(bytes));
+				File coConstraintFile = new File(CF_RESOURCE_BUNDLE_DIR + "/" + userName + "/" + token + "/CoConstraints.xml");
+				FileUtils.writeStringToFile(coConstraintFile, content);
+
+
+				resultMap.put("success", true);
+
+				return resultMap;
+			} catch (NoUserFoundException e) {
+				resultMap.put("success", false);
+				resultMap.put("message", "An error occured. The tool could not upload the coConstraints file sent");
+				resultMap.put("debugError", ExceptionUtils.getMessage(e));
+				return resultMap;
+			} catch (MessageUploadException e) {
+				resultMap.put("success", false);
+				resultMap.put("message", "An error occured. The tool could not upload the coConstraints file sent");
+				resultMap.put("debugError", ExceptionUtils.getMessage(e));
+				return resultMap;
+			} catch (Exception e) {
+				resultMap.put("success", false);
+				resultMap.put("message", "An error occured. The tool could not upload the coConstraints file sent");
+				resultMap.put("debugError", ExceptionUtils.getStackTrace(e));
+				return resultMap;
+			}
+		}
+		
+		/**
+		   * Upload a single XML Value Set Bindings file and may returns errors
+		   * 
+		   * @param request Client request
+		   * @param part Value Set Bindings XML file
+		   * @param token Token used for saving file
+		   * @param p Principal
+		   * @return May return a list of errors
+		   * @throws Exception
+		   */
+			@PreAuthorize("hasRole('tester')")
+			@RequestMapping(value = "/uploadValueSetBindings", method = RequestMethod.POST, consumes = { "multipart/form-data" })
+			@ResponseBody
+			public Map<String, Object> uploadValueSetBindings(ServletRequest request, @RequestPart("file") MultipartFile part,
+					@RequestParam("token") String token, Principal p) throws Exception {
+				checkManagementSupport();
+
+				Map<String, Object> resultMap = new HashMap<String, Object>();
+				try {
+					String filename = part.getOriginalFilename();
+					String extension = filename.substring(filename.lastIndexOf(".") + 1);
+					if (!extension.equalsIgnoreCase("xml")) {
+						throw new MessageUploadException(
+					            "Unsupported content type. Supported content types are: '.xml' ");
+					}
+
+					String userName = userIdService.getCurrentUserName(p);
+					if (userName == null)
+						throw new NoUserFoundException("User could not be found");
+					
+					ByteArrayOutputStream baos = new ByteArrayOutputStream();
+					org.apache.commons.io.IOUtils.copy(part.getInputStream(), baos);
+					byte[] bytes = baos.toByteArray();
+					String content = IOUtils.toString(new ByteArrayInputStream(bytes));
+					File valueSetBindingsFile = new File(CF_RESOURCE_BUNDLE_DIR + "/" + userName + "/" + token + "/ValueSetBindings.xml");
+					FileUtils.writeStringToFile(valueSetBindingsFile, content);
+					resultMap.put("success", true);
+
+					return resultMap;
+				} catch (NoUserFoundException e) {
+					resultMap.put("success", false);
+					resultMap.put("message", "An error occured. The tool could not upload the Value Set Bindings file sent");
+					resultMap.put("debugError", ExceptionUtils.getMessage(e));
+					return resultMap;
+				} catch (MessageUploadException e) {
+					resultMap.put("success", false);
+					resultMap.put("message", "An error occured. The tool could not upload the Value Set Bindings file sent");
+					resultMap.put("debugError", ExceptionUtils.getMessage(e));
+					return resultMap;
+				} catch (Exception e) {
+					resultMap.put("success", false);
+					resultMap.put("message", "An error occured. The tool could not upload the Value Set Bindings file sent");
+					resultMap.put("debugError", ExceptionUtils.getStackTrace(e));
+					return resultMap;
+				}
+			}
+			
+			/**
+			   * Upload a single XML Slicings file and may returns errors
+			   * 
+			   * @param request Client request
+			   * @param part Slicings XML file
+			   * @param token Token used for saving file
+			   * @param p Principal
+			   * @return May return a list of errors
+			   * @throws Exception
+			   */
+				@PreAuthorize("hasRole('tester')")
+				@RequestMapping(value = "/uploadSlicings", method = RequestMethod.POST, consumes = { "multipart/form-data" })
+				@ResponseBody
+				public Map<String, Object> uploadSlicings(ServletRequest request, @RequestPart("file") MultipartFile part,
+						@RequestParam("token") String token, Principal p) throws Exception {
+					checkManagementSupport();
+
+					Map<String, Object> resultMap = new HashMap<String, Object>();
+					try {
+						String filename = part.getOriginalFilename();
+						String extension = filename.substring(filename.lastIndexOf(".") + 1);
+						if (!extension.equalsIgnoreCase("xml")) {
+							throw new MessageUploadException(
+						            "Unsupported content type. Supported content types are: '.xml' ");
+						}
+
+						String userName = userIdService.getCurrentUserName(p);
+						if (userName == null)
+							throw new NoUserFoundException("User could not be found");
+						
+						ByteArrayOutputStream baos = new ByteArrayOutputStream();
+						org.apache.commons.io.IOUtils.copy(part.getInputStream(), baos);
+						byte[] bytes = baos.toByteArray();
+						String content = IOUtils.toString(new ByteArrayInputStream(bytes));
+						File slicingsFile = new File(CF_RESOURCE_BUNDLE_DIR + "/" + userName + "/" + token + "/Slicings.xml");
+						FileUtils.writeStringToFile(slicingsFile, content);
+						resultMap.put("success", true);
+
+						return resultMap;
+					} catch (NoUserFoundException e) {
+						resultMap.put("success", false);
+						resultMap.put("message", "An error occured. The tool could not upload the Slicings file sent");
+						resultMap.put("debugError", ExceptionUtils.getMessage(e));
+						return resultMap;
+					} catch (MessageUploadException e) {
+						resultMap.put("success", false);
+						resultMap.put("message", "An error occured. The tool could not upload the Slicings file sent");
+						resultMap.put("debugError", ExceptionUtils.getMessage(e));
+						return resultMap;
+					} catch (Exception e) {
+						resultMap.put("success", false);
+						resultMap.put("message", "An error occured. The tool could not upload the Slicings file sent");
+						resultMap.put("debugError", ExceptionUtils.getStackTrace(e));
+						return resultMap;
+					}
+				}
+		
   /**
    * Uploads zip file and stores it in a temporary directory
    * 
@@ -499,11 +705,14 @@ public class HL7V2CFManagementController {
         throw new NotValidToken("The provided token is not valid for this account.");
 
       String profileContent = bundleHandler.getProfileContentFromZipDirectory(directory);
-
+      String valueSetContent = bundleHandler.getValueSetContentFromZipDirectory(directory);
+      String valueSetBindingContent = bundleHandler.getValueSetBindingsContentFromZipDirectory(directory);
+      String coConstraintContent = bundleHandler.getCoConstraintContentFromZipDirectory(directory);
+      
       if (profileContent == null)
         throw new MessageUploadException("Could not retrieve the profile list");
 
-      List<UploadedProfileModel> list = packagingHandler.getUploadedProfiles(profileContent);
+      List<UploadedProfileModel> list = packagingHandler.getUploadedProfiles(profileContent,valueSetContent,valueSetBindingContent,coConstraintContent);
       resultMap.put("success", true);
       resultMap.put("profiles", list);
 
@@ -591,18 +800,33 @@ public class HL7V2CFManagementController {
 
       testPlan.setName(wrapper.getTestcasename());
       testPlan.setDescription(wrapper.getTestcasedescription());
+      //creates the TestCases.json in the token folder 
       createTestStepFiles(testPlan.getDomain(), testSteps, wrapper, auth);
       if (wrapper.getToken() != null) {
         // Use files to save to database
         GVTSaveInstance si = bundleHandler.createSaveInstance(
-        		CF_RESOURCE_BUNDLE_DIR + "/" + username + "/" + wrapper.getToken(), testPlan);
+        		CF_RESOURCE_BUNDLE_DIR + "/" + authUsername + "/" + wrapper.getToken(), testPlan);
         ipRepository.save(si.ip);
         csRepository.save(si.ct);
         vsRepository.save(si.vs);
+        //optionals
+        
+        if(si.slicings != null) {
+        	slicingsRepository.save(si.slicings);
+        }
+        if(si.coct != null) {
+        	//if not id generate one random
+        	cocsRepository.save(si.coct);
+        }
+        
+        if(si.vsBindings != null) {
+        	//if not id generate one random
+        	vsbRepository.save(si.vsBindings);
+        }            
         si.tcg.setAuthorUsername(username);
         testPlanService.save((CFTestPlan) si.tcg);
         testPlanService.removeCacheElement(testPlan.getId());
-        FileUtils.deleteDirectory(new File(CF_RESOURCE_BUNDLE_DIR + "/" + username + "/" + wrapper.getToken()));
+        FileUtils.deleteDirectory(new File(CF_RESOURCE_BUNDLE_DIR + "/" + authUsername + "/" + wrapper.getToken()));
       } else {
         testPlanService.save(testPlan);
       }
@@ -666,6 +890,51 @@ public class HL7V2CFManagementController {
 	            }
 	            message.setContent(model.getExampleMessage());
 	          }
+	          
+	         
+	          
+	          //new steps 
+	          if (model.getExternalVS() != null) {
+	        	  for(ValueSetDefinition vsd : model.getExternalVS()) {
+	        		  if (vsd.getApiKey() != null) {
+	        			  if (!vsd.getApiKey().equals("***")) {
+		        			  boolean exists = false;
+			        		  HL7V2TestContext tc = (HL7V2TestContext) found.getTestContext();	        		 	        		  
+			        		  for(APIKey key: tc.getApikeys()) {
+			        			  if (vsd.getBindingIdentifier().equals(key.getBindingIdentifier())) {
+			        				  //we update
+			        				  exists = true;
+			        				  key.setBindingKey(vsd.getApiKey());
+			        			  }
+			        		  }
+			        		  if(!exists) {
+			        			  APIKey newKey = new APIKey(vsd.getBindingIdentifier(), vsd.getUrl(), vsd.getApiKey());
+			        			  tc.getApikeys().add(newKey);
+			        		  }	   
+	        			  }
+	        		  }	        			  	         		
+	        	  }
+	          }else
+	          //update step and  deal with external vs and api keys
+	          if (model.getApikeys() != null) {
+	        	  HL7V2TestContext tc = (HL7V2TestContext) found.getTestContext();	 
+	        	  for(APIKey wrapperKey : model.getApikeys()) {
+	        		  for(APIKey key: tc.getApikeys()) {
+	        			  if (wrapperKey.getId().equals(key.getId()) && wrapperKey.isEditBindingKey()) {
+	        				  if (wrapperKey.getBindingKey() ==null || wrapperKey.getBindingKey().isEmpty()) {	
+	        					  key.setBindingKey(null);
+	        				  }else {
+	  							key.setBindingKey(wrapperKey.getBindingKey());
+							}
+	        				 
+	        			  }
+	        		  }	        		  	        		
+	        	  }
+	        	  
+	        		        	
+	        	  
+	          }
+	          
 	        }
 	      }
 	    }
@@ -678,6 +947,11 @@ public class HL7V2CFManagementController {
 	      testCaseJson.put("profile", "Profile.xml");
 	      testCaseJson.put("constraints", "Constraints.xml");
 	      testCaseJson.put("vs", "ValueSets.xml");
+	      //optional 3 new validation files
+	      testCaseJson.put("coConstraints", "CoConstraints.xml");
+	      testCaseJson.put("slicings", "Slicings.xml");
+	      testCaseJson.put("valueSetBingings", "ValueSetBindings.xml");
+	      
 	      testCaseJson.put("scope", scope);
 	      testCaseJson.put("domain", domain);
 	      // testCaseJson.put("category", wrapper.getCategory());
@@ -696,6 +970,17 @@ public class HL7V2CFManagementController {
 	          if (upm.getExampleMessage() != null) {
 	            ts.put("exampleMessage", upm.getExampleMessage());
 	          }
+	          JSONArray externalVSKeysArray = new JSONArray();
+	          if (upm.getExternalVS() != null) {
+	        	  for ( ValueSetDefinition exvs : upm.getExternalVS()) {
+		        	  JSONObject ex = new JSONObject();
+		        	  ex.put("bindingIdentifier", exvs.getBindingIdentifier());
+		        	  ex.put("url",exvs.getUrl());
+		        	  ex.put("key",exvs.getApiKey());
+		        	  externalVSKeysArray.put(ex);
+		          }	 
+	          }	                  
+	          ts.put("externalValueSetKeys",externalVSKeysArray);
 	          testStepArray.put(ts);
 	        }
 	        testCaseJson.put("testCases", testStepArray);
@@ -709,13 +994,31 @@ public class HL7V2CFManagementController {
 	          new File(CF_RESOURCE_BUNDLE_DIR + "/" + username + "/" + wrapper.getToken() + "/Constraints.xml");
 	      File vsFile =
 	          new File(CF_RESOURCE_BUNDLE_DIR + "/" + username + "/" + wrapper.getToken() + "/ValueSets.xml");
-
-	      if (constraintsFile != null) {
+	      File coConstraintsFile =
+		          new File(CF_RESOURCE_BUNDLE_DIR + "/" + username + "/" + wrapper.getToken() + "/CoConstraints.xml");
+		  File slicingsFile =
+		          new File(CF_RESOURCE_BUNDLE_DIR + "/" + username + "/" + wrapper.getToken() + "/Slicings.xml"); 
+		  File vsbFile =
+		          new File(CF_RESOURCE_BUNDLE_DIR + "/" + username + "/" + wrapper.getToken() + "/ValueSetBindings.xml");
+			      
+	      
+	      if (constraintsFile != null && constraintsFile.exists()) {
 	        packagingHandler.changeConstraintId(constraintsFile);
 	      }
-	      if (vsFile != null) {
+	      if (vsFile != null && vsFile.exists()) {
 	        packagingHandler.changeVsId(vsFile);
 	      }
+	      if (coConstraintsFile != null && coConstraintsFile.exists()) {
+	        packagingHandler.changeCoConstraintsId(coConstraintsFile);
+	      }
+	      if (slicingsFile != null && slicingsFile.exists()) {
+		        packagingHandler.changeSlicingsId(slicingsFile);
+	      }
+	      if (vsbFile != null && vsbFile.exists()) {
+		        packagingHandler.changeVsbId(vsbFile);
+	      }
+	      
+	      
 	      InputStream targetStream = new FileInputStream(profileFile);
 	      String content = IOUtils.toString(targetStream);
 	      String cleanedContent = packagingHandler.removeUnusedAndDuplicateMessages(content, added);
@@ -764,6 +1067,22 @@ public class HL7V2CFManagementController {
         ipRepository.save(si.ip);
         csRepository.save(si.ct);
         vsRepository.save(si.vs);
+        
+        
+        //optionals    
+        if(si.slicings != null) {
+        	slicingsRepository.save(si.slicings);
+        }
+        if(si.coct != null) {
+        	//if not id generate one random
+        	cocsRepository.save(si.coct);
+        }
+        
+        if(si.vsBindings != null) {
+        	//if not id generate one random
+        	vsbRepository.save(si.vsBindings);
+        } 
+        
         si.tcg.setAuthorUsername(username);
         testStepGroupService.save((CFTestStepGroup) si.tcg);       
         
@@ -790,6 +1109,100 @@ public class HL7V2CFManagementController {
     }
 
   }
+  
+  
+  
+  @PreAuthorize("hasRole('tester')")
+  @RequestMapping(value = "/testStepGroups/{testStepGroupId}/refreshTestContext", method = RequestMethod.POST)
+  @ResponseBody
+  public Map<String, Object> refreshTestStepGroupsTestContextModels(HttpServletRequest request,
+      @PathVariable("testStepGroupId") Long testStepGroupId,
+      Authentication auth) {
+    
+        Map<String, Object> resultMap = new HashMap<String, Object>();
+      try {
+		checkManagementSupport();
+	
+      CFTestStepGroup testStepGroup = testStepGroupService.findOne(testStepGroupId);
+      if (testStepGroup == null) {
+        throw new Exception("Profile Group could not be found");
+      }
+      String username = auth.getName();
+      if (!username.equals(testStepGroup.getAuthorUsername()) && !userService.isAdmin(username)) {
+        throw new Exception("You do not have sufficient right to change this profile group");
+      }
+        
+      resourceLoader.updateCFTestStepGroupConformanceProfileJson(testStepGroup);
+      testStepGroupService.save(testStepGroup);
+
+      return resultMap;
+      } catch (Exception e) {
+       resultMap.put("error", e.getMessage());
+       return resultMap;
+  	}
+  }
+  
+  @PreAuthorize("hasRole('tester')")
+  @RequestMapping(value = "/testPlans/{testPlanId}/refreshTestContext", method = RequestMethod.POST)
+  @ResponseBody
+  public Map<String, Object> refreshTestPlanTestContextModels(HttpServletRequest request,
+      @PathVariable("testPlanId") Long testPlanId,
+      Authentication auth) {
+    
+        Map<String, Object> resultMap = new HashMap<String, Object>();
+      try {
+		checkManagementSupport();
+	
+      CFTestPlan testPlan = testPlanService.findOne(testPlanId);
+      if (testPlan == null) {
+        throw new Exception("Test Plan could not be found");
+      }
+      String username = auth.getName();
+      if (!username.equals(testPlan.getAuthorUsername()) && !userService.isAdmin(username)) {
+        throw new Exception("You do not have sufficient right to change this profile group");
+      }
+        
+      resourceLoader.updateCFTestPlanConformanceProfileJson(testPlan);
+      testPlanService.save(testPlan);
+
+      return resultMap;
+      } catch (Exception e) {
+       resultMap.put("error", e.getMessage());
+       return resultMap;
+  	}
+  }
+  
+  @PreAuthorize("hasRole('tester')")
+  @RequestMapping(value = "/testSteps/{testStepId}/refreshTestContext", method = RequestMethod.POST)
+  @ResponseBody
+  public Map<String, Object> refreshTestStepTestContextModels(HttpServletRequest request,
+      @PathVariable("testStepId") Long testStepId,
+      Authentication auth) {
+    
+        Map<String, Object> resultMap = new HashMap<String, Object>();
+      try {
+		checkManagementSupport();
+	
+      CFTestStep testStep = testStepService.findOne(testStepId);
+      if (testStep == null) {
+        throw new Exception("Test Step could not be found");
+      }
+      String username = auth.getName();
+      if (!username.equals(testStep.getAuthorUsername()) && !userService.isAdmin(username)) {
+        throw new Exception("You do not have sufficient right to change this profile group");
+      }
+        
+      resourceLoader.updateTestStepCFConformanceProfileJson(testStep);
+      testStepService.save(testStep);
+
+      return resultMap;
+      } catch (Exception e) {
+       resultMap.put("error", e.getMessage());
+       return resultMap;
+  	}
+  }
+  
+  
 
   /**
    * Delete a profile from the database
@@ -840,6 +1253,38 @@ public class HL7V2CFManagementController {
 
     // return true if testPlan is also deleted, false otherwise
     return res;
+  }
+  
+  
+  private String checkAndFixIdinXML(String xml,String element) {
+	  DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+      DocumentBuilder builder;
+	try {
+		builder = factory.newDocumentBuilder();	
+		Document doc = builder.parse(new InputSource(new StringReader(xml)));
+		XPathFactory xPathfactory = XPathFactory.newInstance();
+		XPath xpath = xPathfactory.newXPath();    
+		
+		XPathExpression expr = xpath.compile("//"+element+"/@ID");
+		Node attrNode = (Node) expr.evaluate(doc, XPathConstants.NODE);
+		if (attrNode != null && !attrNode.getNodeValue().isEmpty()) {
+			return xml;
+		}else {
+			return xml;//TODO
+		}
+		
+		
+	} catch (XPathExpressionException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	} catch (SAXException | IOException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	} catch (ParserConfigurationException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	}
+	  return null;
   }
 
 }

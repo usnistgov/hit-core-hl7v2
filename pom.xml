@@ -2,7 +2,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>gov.nist.hit.core.hl7v2</groupId>
 	<artifactId>hit-core-hl7v2</artifactId>
-	<version>1.0.24-SNAPSHOT</version>
+	<version>1.1.1</version>
 	<name>hit-core-hl7v2</name>
 	<description>hit-core-hl7v2</description>
 	<packaging>pom</packaging>
@@ -14,12 +14,12 @@
 	</modules>
 
 	<properties>
-		<hitcore.version>1.0.29-SNAPSHOT</hitcore.version>
+		<hitcore.version>1.1.0</hitcore.version>
 		<additionalparam>-Xdoclint:none</additionalparam>
 		<java.version>1.8</java.version>
 		<resourcesValidation.version>1.0.1</resourcesValidation.version>
-		<hl7v2Validation.version>1.5.4a</hl7v2Validation.version>
-		<unifiedreport.version>1.0.10-SNAPSHOT</unifiedreport.version>
+		<hl7v2Validationutils.version>1.0.0</hl7v2Validationutils.version>
+		<unifiedreport.version>1.1.0-SNAPSHOT</unifiedreport.version>
 	</properties>
 
 	<dependencies>
@@ -51,32 +51,27 @@
 		</dependency>
 
 		<dependency>
-            <groupId>gov.nist</groupId>
-            <artifactId>hl7-v2-validation</artifactId>
-            <version>${hl7v2Validation.version}</version>
-        </dependency>
+			<groupId>org.scala-lang</groupId>
+			<artifactId>scala-library</artifactId>
+			<version>2.13.10</version>
+		</dependency>
+
         <dependency>
             <groupId>gov.nist.healthcare.hl7.v2.unifiedreport</groupId>
             <artifactId>validation-proxy</artifactId>
             <version>${unifiedreport.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>gov.nist.healthcare.hl7.v2.unifiedreport</groupId>
-            <artifactId>report-filter</artifactId>
-            <version>${unifiedreport.version}</version>
-        </dependency>
+        </dependency>                
         
-        		<dependency>
+		<dependency>
 			<groupId>gov.nist.healthcare.resources</groupId>
 			<artifactId>validation</artifactId>
 			<version>${resourcesValidation.version}</version>
-		</dependency>
-		
+		</dependency>	
 		
 		<dependency>
 			<groupId>gov.nist.hit.hl7</groupId>
 			<artifactId>xml-verification</artifactId>
-			<version>1.6.4-SNAPSHOT</version>	
+			<version>1.6.5-SNAPSHOT</version>
 			<exclusions>
 				<exclusion>
 					<groupId>gov.nist</groupId>
@@ -97,8 +92,14 @@
 			</exclusions>
 		</dependency>
 		
+        <dependency>
+		 <groupId>gov.nist.hl7.v2.validation</groupId>
+		  <artifactId>hl7-v2-validation-utils</artifactId>
+		  <version>${hl7v2Validationutils.version}</version>
+		</dependency>
         
-        
+     
+
         
 	</dependencies>
 
@@ -119,7 +120,7 @@
 					</configuration>
 				</plugin>
 
-<plugin>
+				<plugin>
 					<artifactId>maven-release-plugin</artifactId>
 					<version>2.3.2</version>
 					<configuration>

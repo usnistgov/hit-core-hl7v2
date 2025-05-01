@@ -11,7 +11,9 @@ public class HLV2TestCaseDocument extends TestCaseDocument implements Serializab
   protected boolean xmlConfProfilePresent;
   protected boolean xmlValueSetLibraryPresent;
   protected boolean xmlConstraintsPresent;
-
+  protected boolean xmlCoConstraintsPresent;
+  protected boolean xmlValueSetBindingsPresent;
+  protected boolean xmlSlicingsPresent;
 
   public HLV2TestCaseDocument() {
     super();
@@ -50,6 +52,31 @@ public class HLV2TestCaseDocument extends TestCaseDocument implements Serializab
     this.xmlConstraintsPresent = xmlConstraintsPresent;
   }
 
+	public boolean isXmlCoConstraintsPresent() {
+		return xmlCoConstraintsPresent;
+	}
+	
+	public void setXmlCoConstraintsPresent(boolean xmlCoConstraintsPresent) {
+		this.xmlCoConstraintsPresent = xmlCoConstraintsPresent;
+	}
+	
+	public boolean isXmlValueSetBindingsPresent() {
+		return xmlValueSetBindingsPresent;
+	}
+	
+	public void setXmlValueSetBindingsPresent(boolean xmlValueSetBindingsPresent) {
+		this.xmlValueSetBindingsPresent = xmlValueSetBindingsPresent;
+	}
+	
+	public boolean isXmlSlicingsPresent() {
+		return xmlSlicingsPresent;
+	}
+	
+	public void setXmlSlicingsPresent(boolean xmlSlicingsPresent) {
+		this.xmlSlicingsPresent = xmlSlicingsPresent;
+	}
+
+  	
 
 
 }

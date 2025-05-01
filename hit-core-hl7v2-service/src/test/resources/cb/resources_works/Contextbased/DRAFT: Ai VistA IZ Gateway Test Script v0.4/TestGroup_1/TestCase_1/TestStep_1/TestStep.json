@@ -1,0 +1,15 @@
+{
+    "hl7v2": {
+        "constraintId": "6349b594aa52d55524bee8d1_6349b593aa52d55524bee8c8_C",
+        "messageId": "6349b594aa52d55524bee8d1_6349b593aa52d55524bee8c8_6189fe2d8b87bc000688f4ef",
+        "valueSetLibraryId": "6349b594aa52d55524bee8d1_6349b593aa52d55524bee8c8_VS"
+    },
+    "name": "Provider Sends VXU for HX 18YO HIB",
+    "description": "Demonstrates the ability of the provider system to generate a VXU Test Message for an adult 18 year-old veteran being vaccinated with Haemophilus influenzae type b as a single dose formatted according to the IZ Gateway HL7 v2.5.1 IG for Multi-Jurisdiction Provider IZ Messaging.",
+    "id": -4396140071279984863,
+    "position": 1,
+    "type": "TA_INITIATOR",
+    "protocols": [
+        "soap"
+    ]
+}
