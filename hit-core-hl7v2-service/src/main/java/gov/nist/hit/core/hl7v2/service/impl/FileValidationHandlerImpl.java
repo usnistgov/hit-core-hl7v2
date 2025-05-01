@@ -7,6 +7,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -14,6 +16,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -21,6 +24,8 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
@@ -36,6 +41,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import gov.nist.healthcare.resources.domain.XMLError;
 import gov.nist.healthcare.resources.xds.XMLResourcesValidator;
 import gov.nist.hit.core.hl7v2.service.FileValidationHandler;
+import gov.nist.hit.core.service.BundleHandler;
 import gov.nist.hit.core.service.ResourceLoader;
 import gov.nist.hit.hl7.profile.validation.domain.GenericError;
 import gov.nist.hit.hl7.profile.validation.domain.ProfileValidationReport;
@@ -48,6 +54,12 @@ public class FileValidationHandlerImpl implements FileValidationHandler {
 
 	@Autowired
 	private ResourceLoader resourceLoader;
+	
+	@Autowired
+	private BundleHandler bundleHandler;
+	
+	static final public Logger logger = LogManager.getLogger(FileValidationHandlerImpl.class);
+
 
 	@Override
 	public List<XMLError> validateProfile(String contentTxt, InputStream contentIS) throws Exception {
@@ -255,11 +267,13 @@ public class FileValidationHandlerImpl implements FileValidationHandler {
 
 	@Override
 	public List<ProfileValidationReport> getHTMLValidatioReportForContextBased(String dir) throws Exception {		
+		logger.info("Validation report for context based");
 		ValidationServiceImpl vsi = new ValidationServiceImpl();
 		List<ProfileValidationReport> reports = new ArrayList<ProfileValidationReport>();
 		
 		// Profiles
         List<String> profiles = getFileContent(dir+"/Global/Profiles","xml");
+        logger.info("found "+ profiles.size() +" profiles");
 		//map all message id with the file
         Map<String, String> profileMap = new HashMap<String, String>();
         for(String profileString : profiles) {
@@ -270,6 +284,7 @@ public class FileValidationHandlerImpl implements FileValidationHandler {
         
 		// Constraints
         List<String> constraints = getFileContent(dir+"/Global/Constraints","xml");
+        logger.info("found "+ constraints.size() +" constraints");
         //map all ConformanceContext id with the file
         Map<String, String> constraintsMap = new HashMap<String, String>();
         for(String constraintString : constraints) {
@@ -280,6 +295,7 @@ public class FileValidationHandlerImpl implements FileValidationHandler {
         
 		// VS
         List<String> valuesets = getFileContent(dir+"/Global/Tables","xml");
+        logger.info("found "+ valuesets.size() +" valuesets");
         //map all ValueSetLibrary id with the file
         Map<String, String> vsMap = new HashMap<String, String>();
         for(String valuesetString : valuesets) {
@@ -291,6 +307,7 @@ public class FileValidationHandlerImpl implements FileValidationHandler {
                 
 		// CoConstraints
         List<String> coConstraints = getFileContent(dir+"/Global/CoConstraints","xml");
+        logger.info("found "+ coConstraints.size() +" coConstraints");
         //map all CoConstraintContext id with the file
         Map<String, String> coConstraintsMap = new HashMap<String, String>();
         for(String coConstraint : coConstraints) {
@@ -302,6 +319,7 @@ public class FileValidationHandlerImpl implements FileValidationHandler {
         
 		// Slicings
         List<String> slicings = getFileContent(dir+"/Global/Slicings","xml");
+        logger.info("found "+ slicings.size() +" slicings");
         //map all ProfileSlicing id with the file
         Map<String, String> slicingsMap = new HashMap<String, String>();
         for(String slicing : slicings) {
@@ -313,6 +331,7 @@ public class FileValidationHandlerImpl implements FileValidationHandler {
         
 		// valueSetBindings
         List<String> valuesetBindings = getFileContent(dir+"/Global/Bindings","xml");
+        logger.info("found "+ valuesetBindings.size() +" valuesetBindings");
         //map all ValueSetBindingsContext id with the file
         Map<String, String> valuesetBindingsMap = new HashMap<String, String>();
         for(String valuesetBinding : valuesetBindings) {
@@ -322,8 +341,9 @@ public class FileValidationHandlerImpl implements FileValidationHandler {
 //        	valuesetBindingsMap.put(extractAttributeFromElement("ValueSetBindingsContext","ID",valuesetBinding),valuesetBinding);
         }
 		
-        List<File> testSteps = findTestStepJsonFiles(dir+"/ContextBased");
-        
+
+        Set<File> testSteps = bundleHandler.findFiles(dir, "TestStep.json");
+        logger.info("found "+ testSteps.size() +" testSteps");
 		for (File testStep : testSteps) {
 			// load a local constraint maybe
 			// go through all of them. Read and find the depdencies
@@ -451,33 +471,57 @@ public class FileValidationHandlerImpl implements FileValidationHandler {
 						String content = new String(Files.readAllBytes(Paths.get(file.getAbsolutePath())));
 						xmls.add(content);
 					} catch (IOException e) {
-						System.err.println("Error reading file: " + file.getName() + " - " + e.getMessage());
+						logger.debug("Error reading file: " + file.getName(), e.getMessage());				
 					}
 				}
 			}
 		} else {
-			System.err.println("Error: Could not list files in directory '" + dir + "'.");
+			logger.debug("Error: Could not list files in directory: '" + dir);		
 		}
 		return xmls;
 	}
 
 	private List<File> findTestStepJsonFiles(String dir) {
+		logger.info("findTestStepJsonFiles " + dir);
 		File directory = new File(dir);
+		logger.info(directory.exists());
 		List<File> files = new ArrayList<File>();
 		findTestStepJsonFilesRecursive(directory, files);
 		return files;
 	}
 
 	private void findTestStepJsonFilesRecursive(File directory, List<File> files) {
-		File[] dirFiles = directory.listFiles();
-		if (dirFiles != null) {
-			for (File file : dirFiles) {
-				if (file.isDirectory()) {
-					findTestStepJsonFilesRecursive(file, files);
-				} else if (file.getName().equals("TestStep.json")) {
-					files.add(file);
+		logger.info("directory " + directory.getAbsolutePath());
+
+		Path directoryPath = Paths.get(directory.getAbsolutePath());
+		try {
+			List<File> files2 = new ArrayList<File>();
+			
+			//interestingly if this check if not done, the directory is not found, no matter if it exists or not...
+			if (!Files.exists(directoryPath)) {
+				logger.info("directory path does not exist");
+			}
+			if (!Files.isReadable(directoryPath)) {
+				logger.info("directory is not readable");
+			}else {
+				logger.info("directory IS readable");
+				Files.list(directoryPath).forEach(path -> { System.out.println(path.toAbsolutePath()); files2.add(path.toFile());});			
+				logger.info("dirFiles " + files2.size());
+				if (files2 != null && files2.size() > 0) {
+					for (File file : files2) {
+						logger.info(file.getAbsolutePath());
+						if (file.isDirectory()) {
+							findTestStepJsonFilesRecursive(file, files);
+						} else if (file.getName().equals("TestStep.json")) {
+							files.add(file);
+						}
+					}
 				}
 			}
+		}catch (NoSuchFileException e) {
+            System.err.println("Directory not found: " + e.getMessage());
+        } catch (IOException e) {
+			System.out.println("Error listing files: " + e.getMessage());
 		}
 	}
 

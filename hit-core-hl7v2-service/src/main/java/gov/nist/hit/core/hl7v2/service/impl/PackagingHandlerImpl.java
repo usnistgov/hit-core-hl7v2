@@ -26,6 +26,7 @@ import javax.xml.transform.stream.StreamResult;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
@@ -35,10 +36,14 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
+import gov.nist.hit.core.domain.ContentDefinitionType;
 import gov.nist.hit.core.domain.ExtensibilityType;
 import gov.nist.hit.core.domain.ProfileModel;
 import gov.nist.hit.core.domain.StabilityType;
+import gov.nist.hit.core.domain.UsageType;
 import gov.nist.hit.core.domain.ValueSetDefinition;
+import gov.nist.hit.core.domain.ValueSetDefinitions;
+import gov.nist.hit.core.domain.ValueSetElement;
 import gov.nist.hit.core.domain.valuesetbindings.Binding;
 import gov.nist.hit.core.domain.valuesetbindings.ValueSetBinding;
 import gov.nist.hit.core.hl7v2.domain.UploadedProfileModel;
@@ -139,23 +144,107 @@ public class PackagingHandlerImpl implements PackagingHandler {
 	
 	public List<ValueSetDefinition> getExternalValueSets(String xml){
 		Document valueSetDoc = this.toDoc(xml);
-		NodeList extValSetDefNodes = valueSetDoc.getElementsByTagName("ExternalValueSetDefinitions");
 		List<ValueSetDefinition> listOfExternalVSD = new ArrayList<ValueSetDefinition>();
+		//legacy location of ExternalValueSetDefinitions
+		NodeList extValSetDefNodes = valueSetDoc.getElementsByTagName("ExternalValueSetDefinitions");
 		for (int i = 0; i < extValSetDefNodes.getLength(); i++) {
 			
 			Element elmIntegrationProfile = (Element) extValSetDefNodes.item(i);
 			NodeList valSetDefNodes = elmIntegrationProfile.getElementsByTagName("ValueSetDefinition");
 			for (int j = 0; j < valSetDefNodes.getLength(); j++) {
-				Element elm = (Element) valSetDefNodes.item(j);
-				ValueSetDefinition vsb = new ValueSetDefinition();
-				vsb.setBindingIdentifier(elm.getAttribute("BindingIdentifier"));
-				vsb.setName(elm.getAttribute("Name"));
-				vsb.setStability(StabilityType.fromValue(elm.getAttribute("Stability")));
-				vsb.setExtensibility(ExtensibilityType.fromValue(elm.getAttribute("Extensibility")));
-				vsb.setUrl(elm.getAttribute("URL"));			
-				listOfExternalVSD.add(vsb);
+				Element elmTable = (Element) valSetDefNodes.item(j);
+				ValueSetDefinition externalVSD = new ValueSetDefinition(true);
+		          externalVSD.setBindingIdentifier(elmTable.getAttribute("BindingIdentifier"));
+		          externalVSD.setName(elmTable.getAttribute("Name"));
+
+		          if (StringUtils.isNotEmpty(elmTable.getAttribute("NoCodeDisplayText"))) {
+		        	  externalVSD.setNoCodeDisplayText(elmTable.getAttribute("NoCodeDisplayText"));
+		          }
+
+		          if (StringUtils.isNotEmpty(elmTable.getAttribute("Description"))) {
+		        	  externalVSD.setDescription(elmTable.getAttribute("Description"));
+		          }
+
+		          if (StringUtils.isNotEmpty(elmTable.getAttribute("URL"))) {
+		        	  externalVSD.setUrl(elmTable.getAttribute("URL"));
+		          }
+		          if (StringUtils.isNotEmpty(elmTable.getAttribute("Extensibility"))) {
+		        	  externalVSD.setExtensibility(ExtensibilityType.fromValue(elmTable
+		                .getAttribute("Extensibility")));
+		          }
+		          if (StringUtils.isNotEmpty(elmTable.getAttribute("Version"))) {
+		        	  externalVSD.setVersion(elmTable.getAttribute("Version"));
+		          }
+
+		          if (StringUtils.isNotEmpty(elmTable.getAttribute("Stability"))) {
+		        	  externalVSD.setStability(StabilityType.fromValue(elmTable.getAttribute("Stability")));
+		          }
+		          if (StringUtils.isNotEmpty(elmTable.getAttribute("Oid"))) {
+		        	  externalVSD.setOid(elmTable.getAttribute("Oid"));
+		            }
+		          if (StringUtils.isNotEmpty(elmTable.getAttribute("ContentDefinition"))) {
+		        	  externalVSD.setContentDefinition(ContentDefinitionType.fromValue(elmTable
+		                  .getAttribute("ContentDefinition")));
+		           }			
+				listOfExternalVSD.add(externalVSD);
 			}
 		}
+		
+		
+		NodeList valueSetDefinitionsElements =
+				valueSetDoc.getElementsByTagName("ValueSetDefinitions");
+
+		    if (valueSetDefinitionsElements != null && valueSetDefinitionsElements.getLength() > 0) {
+		      for (int k = 0; k < valueSetDefinitionsElements.getLength(); k++) {
+		        Element valueSetDefinitionsElement = (Element) valueSetDefinitionsElements.item(k);		        
+		        		       		        
+		        //ExternalValueSetDefinition 
+		        NodeList externalValueSetDefinitionNodes = valueSetDefinitionsElement.getElementsByTagName("ExternalValueSetDefinition");
+		        for (int i = 0; i < externalValueSetDefinitionNodes.getLength(); i++) {
+		          Element elmTable = (Element) externalValueSetDefinitionNodes.item(i);
+		          ValueSetDefinition externalVSD = new ValueSetDefinition(true);
+		          externalVSD.setBindingIdentifier(elmTable.getAttribute("BindingIdentifier"));
+		          externalVSD.setName(elmTable.getAttribute("Name"));
+
+		          if (StringUtils.isNotEmpty(elmTable.getAttribute("NoCodeDisplayText"))) {
+		        	  externalVSD.setNoCodeDisplayText(elmTable.getAttribute("NoCodeDisplayText"));
+		          }
+
+		          if (StringUtils.isNotEmpty(elmTable.getAttribute("Description"))) {
+		        	  externalVSD.setDescription(elmTable.getAttribute("Description"));
+		          }
+
+		          if (StringUtils.isNotEmpty(elmTable.getAttribute("URL"))) {
+		        	  externalVSD.setUrl(elmTable.getAttribute("URL"));
+		          }
+		          if (StringUtils.isNotEmpty(elmTable.getAttribute("Extensibility"))) {
+		        	  externalVSD.setExtensibility(ExtensibilityType.fromValue(elmTable
+		                .getAttribute("Extensibility")));
+		          }
+		          if (StringUtils.isNotEmpty(elmTable.getAttribute("Version"))) {
+		        	  externalVSD.setVersion(elmTable.getAttribute("Version"));
+		          }
+
+		          if (StringUtils.isNotEmpty(elmTable.getAttribute("Stability"))) {
+		        	  externalVSD.setStability(StabilityType.fromValue(elmTable.getAttribute("Stability")));
+		          }
+		          if (StringUtils.isNotEmpty(elmTable.getAttribute("Oid"))) {
+		        	  externalVSD.setOid(elmTable.getAttribute("Oid"));
+		            }
+		          if (StringUtils.isNotEmpty(elmTable.getAttribute("ContentDefinition"))) {
+		        	  externalVSD.setContentDefinition(ContentDefinitionType.fromValue(elmTable
+		                  .getAttribute("ContentDefinition")));
+		           }
+
+		          listOfExternalVSD.add(externalVSD);
+		        }
+		        
+		        
+		      }
+		    }
+		
+		
+		
 		return listOfExternalVSD;
 	}
 	

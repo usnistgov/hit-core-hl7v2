@@ -1186,23 +1186,28 @@ public abstract class HL7V2ProfileParser extends ProfileParser {
 	//include only SegmentSlicing and FieldSlicing that are present in the message
 	private void filterSlicings(String messageId) {
 		if (this.profileSlicing != null && profileSlicing.getSegmentSlicing() != null) {
-			SegmentSlicing ssl= profileSlicing.getSegmentSlicing();		
-			java.util.Iterator<SegmentSlicingMessageContext> iterator = ssl.getMessages().iterator();
-	        while (iterator.hasNext()) {
-	        	SegmentSlicingMessageContext message = iterator.next();
-	            if (!message.getId().equals(messageId)) {
-	                iterator.remove(); // remove SegmentSlicingMessageContext that are not for this message ID
-	            }
-	        }	
+			SegmentSlicing ssl= profileSlicing.getSegmentSlicing();	
+			if (ssl != null) {
+				java.util.Iterator<SegmentSlicingMessageContext> iterator = ssl.getMessages().iterator();
+		        while (iterator.hasNext()) {
+		        	SegmentSlicingMessageContext message = iterator.next();
+		            if (!message.getId().equals(messageId)) {
+		                iterator.remove(); // remove SegmentSlicingMessageContext that are not for this message ID
+		            }
+		        }	
+			}
 	        
-	        FieldSlicing fsl= profileSlicing.getFieldSlicing();		
-			java.util.Iterator<FieldSlicingContext> iterator2 = fsl.getSegmentContexts().iterator();
-	        while (iterator2.hasNext()) {
-	        	FieldSlicingContext segment = iterator2.next();
-	            if (!this.segmentsMap.containsKey(segment.getId())) {
-	                iterator2.remove(); // remove SegmentSlicingMessageContext that are not for this message ID
-	            }
-	        }	
+			
+			FieldSlicing fsl= profileSlicing.getFieldSlicing();		
+			if(fsl != null) {
+				java.util.Iterator<FieldSlicingContext> iterator2 = fsl.getSegmentContexts().iterator();
+		        while (iterator2.hasNext()) {
+		        	FieldSlicingContext segment = iterator2.next();
+		            if (!this.segmentsMap.containsKey(segment.getId())) {
+		                iterator2.remove(); // remove FieldSlicingContext that are not for this message ID
+		            }
+		        }	
+			}
 		}
 	}
 	

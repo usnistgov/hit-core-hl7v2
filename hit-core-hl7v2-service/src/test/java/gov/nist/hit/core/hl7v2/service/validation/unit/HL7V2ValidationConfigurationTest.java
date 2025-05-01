@@ -23,6 +23,7 @@ import java.io.StringReader;
 import java.util.stream.Collectors;
 
 import org.apache.commons.io.IOUtils;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.typesafe.config.Config;
@@ -32,6 +33,7 @@ import com.typesafe.config.ConfigValueFactory;
 import gov.nist.hit.core.hl7v2.domain.HL7V2ValidationClassificationEnum;
 import gov.nist.hit.core.hl7v2.domain.HL7V2ValidationClassifications;
 import gov.nist.hit.core.service.exception.MessageParserException;
+
 
 public class HL7V2ValidationConfigurationTest {
 

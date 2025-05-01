@@ -30,8 +30,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.io.FileUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -51,9 +51,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import gov.nist.auth.hit.core.domain.Account;
+import gov.nist.hit.core.api.AccountController;
 import gov.nist.hit.core.api.SessionContext;
 import gov.nist.hit.core.domain.AbstractTestCase;
-import gov.nist.hit.core.domain.CFTestPlan;
 import gov.nist.hit.core.domain.ResourceType;
 import gov.nist.hit.core.domain.ResourceUploadAction;
 import gov.nist.hit.core.domain.ResourceUploadResult;
@@ -98,8 +98,9 @@ import io.swagger.annotations.ApiParam;
 @Api(value = "Context-based Testing", tags = "Context-free Testing", position = 1)
 public class CBManagementController {
 
-	static final Logger logger = LoggerFactory.getLogger(CBManagementController.class);
+	static final  Logger logger = LogManager.getLogger(CBManagementController.class);
 
+	
 	// public static final String CB_UPLOAD_DIR = new
 	// File(System.getProperty("java.io.tmpdir")).getAbsolutePath() + "/cb";
 
@@ -814,7 +815,7 @@ public class CBManagementController {
 			String username = userIdService.getCurrentUserName(p);
 			if (username == null)
 				throw new NoUserFoundException("User could not be found");
-			String token = UUID.randomUUID().toString();
+			String token = UUID.randomUUID().toString().replaceAll("-","_");
 			filename = part.getOriginalFilename().substring(0, part.getOriginalFilename().lastIndexOf("."));
 
 			String directory = bundleHandler.unzip(part.getBytes(), CB_RESOURCE_BUNDLE_DIR + "/" + token);
@@ -836,7 +837,7 @@ public class CBManagementController {
 				}
 			}
 			
-			//files validation 
+			//files validation 		
 			List<ProfileValidationReport> reports = fileValidationHandler.getHTMLValidatioReportForContextBased(directory);
 			List<String> filteredreports = reports.stream()
 	                .filter(report -> !report.isSuccess())
