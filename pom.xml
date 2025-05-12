@@ -2,7 +2,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>gov.nist.hit.core.hl7v2</groupId>
 	<artifactId>hit-core-hl7v2</artifactId>
-	<version>1.1.1</version>
+	<version>1.1.1-SNAPSHOT</version>
 	<name>hit-core-hl7v2</name>
 	<description>hit-core-hl7v2</description>
 	<packaging>pom</packaging>
@@ -19,7 +19,7 @@
 		<java.version>1.8</java.version>
 		<resourcesValidation.version>1.0.1</resourcesValidation.version>
 		<hl7v2Validationutils.version>1.0.0</hl7v2Validationutils.version>
-		<unifiedreport.version>1.1.0-SNAPSHOT</unifiedreport.version>
+		<unifiedreport.version>1.1.0</unifiedreport.version>
 	</properties>
 
 	<dependencies>
