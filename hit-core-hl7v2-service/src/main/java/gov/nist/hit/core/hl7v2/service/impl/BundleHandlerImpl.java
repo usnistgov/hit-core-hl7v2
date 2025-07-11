@@ -53,36 +53,44 @@ public class BundleHandlerImpl implements BundleHandler {
 
 	@Override
 	public String unzip(byte[] bytes, String path) throws Exception {
-		File tmpDir = new File(path);
-		tmpDir.mkdirs();
-		if (tmpDir.isDirectory()) {
-			// Extract ZIP
-			ZipInputStream zip = new ZipInputStream(new ByteArrayInputStream(bytes));
-			ZipEntry ze;
-			while ((ze = zip.getNextEntry()) != null) {
-				String filePath = tmpDir.getAbsolutePath() + File.separator + ze.getName();
-				if (!ze.isDirectory()) {
-					File tmpDir_bis = new File(filePath).getParentFile();
-					tmpDir_bis.mkdirs();
-					BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(filePath));
-					byte[] bytesIn = new byte[1024];
-					int read = 0;
-					while ((read = zip.read(bytesIn)) != -1) {
-						bos.write(bytesIn, 0, read);
-					}
-					bos.close();
-				} else {
-					File dir = new File(filePath);
-					dir.mkdir();
-				}
-				zip.closeEntry();
-			}
-			zip.close();
-			return tmpDir.getAbsolutePath();
+	    File tmpDir = new File(path);
+	    tmpDir.mkdirs();
+	    if (!tmpDir.isDirectory()) {
+	        throw new Exception("Could not create TMP directory at " + tmpDir.getAbsolutePath());
+	    }
 
-		} else {
-			throw new Exception("Could not create TMP directory at " + tmpDir.getAbsolutePath());
-		}
+	    try (ZipInputStream zip = new ZipInputStream(new ByteArrayInputStream(bytes))) {
+	        ZipEntry ze;
+	        while ((ze = zip.getNextEntry()) != null) {
+	            // Replace all whitespace (space, tab, etc.) in the entry name with underscores
+	            String cleanName = ze.getName().replaceAll("\\s+", "_");
+
+	            File outFile = new File(tmpDir, cleanName);
+	            if (ze.isDirectory()) {
+	                // Make directory (and any parent dirs)
+	                if (!outFile.isDirectory() && !outFile.mkdirs()) {
+	                    throw new IOException("Failed to create directory " + outFile.getAbsolutePath());
+	                }
+	            } else {
+	                // Make sure parent directory exists
+	                File parent = outFile.getParentFile();
+	                if (parent != null && !parent.isDirectory() && !parent.mkdirs()) {
+	                    throw new IOException("Failed to create directory " + parent.getAbsolutePath());
+	                }
+	                // Write file data
+	                try (BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(outFile))) {
+	                    byte[] buffer = new byte[1024];
+	                    int len;
+	                    while ((len = zip.read(buffer)) != -1) {
+	                        bos.write(buffer, 0, len);
+	                    }
+	                }
+	            }
+	            zip.closeEntry();
+	        }
+	    }
+
+	    return tmpDir.getAbsolutePath();
 	}
 
 	//not used

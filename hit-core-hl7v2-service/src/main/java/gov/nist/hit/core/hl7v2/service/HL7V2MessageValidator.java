@@ -13,6 +13,7 @@ package gov.nist.hit.core.hl7v2.service;
 
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -182,7 +183,17 @@ public abstract class HL7V2MessageValidator implements MessageValidator {
 					validationServiceVersion = domain.getHl7v2ValidationVersion();
 				}
 				
+				Boolean useHttp = true;
+				if (command.getUseHttp() != null && command.getUseHttp() instanceof Boolean) {
+					useHttp = command.getUseHttp();
+				}
 				
+				//Setting options
+				Map<String,Object> options = new HashMap<String, Object>();
+				options.put("context", Context.valueOf(contextType));
+				options.put("configuration", conf);
+				options.put("apikeys",v2TestContext.getApiHashMap());
+				options.put("useHttp", useHttp);
 					
 //						call external service
 						report = vp.validate(message,
@@ -193,9 +204,7 @@ public abstract class HL7V2MessageValidator implements MessageValidator {
 							v2TestContext.getCoConstraints() != null ? v2TestContext.getCoConstraints().getXml() : null,
 							v2TestContext.getSlicings() != null ? v2TestContext.getSlicings().getXml() : null,
 							conformanceProfielId,
-							Context.valueOf(contextType),
-							conf,
-							v2TestContext.getApiHashMap(),validationServiceVersion);
+							options);
 					
 						//not local validation dependency
 //						report = vp.validateNew(message,

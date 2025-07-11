@@ -66,7 +66,7 @@ import gov.nist.hit.core.service.exception.ProfileParserException;
 import gov.nist.hit.core.service.impl.ValueSetLibrarySerializerImpl;
 import gov.nist.hit.core.service.util.FileUtil;
 
-@Service
+//@Service
 public class HL7V2ResourceLoaderImpl extends HL7V2ResourceLoader {
 
 	static final Logger logger = LoggerFactory.getLogger(HL7V2ResourceLoaderImpl.class);
