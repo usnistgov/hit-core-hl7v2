@@ -83,6 +83,7 @@ import hl7.v2.profile.Usage;
 import hl7.v2.profile.ValueSetSpec;
 import hl7.v2.profile.XMLDeserializer;
 import scala.collection.Iterator;
+import scala.collection.JavaConverters;
 import scala.collection.immutable.List;
 
 /**
@@ -139,24 +140,46 @@ public abstract class HL7V2ProfileParser extends ProfileParser {
 			Profile p = null;
 			InputStream profileStream = IOUtils.toInputStream(integrationProfileXml);
 			p = XMLDeserializer.deserialize(profileStream).get();
+			
+			//TODO PARSE get segments!
 			Message m = p.getMessage(conformanceProfileId);
-			return parseEnhanced(m, constraintsXml, additionalConstraintsXml,valueSetsXML, valueSetBindings,coConstraints, slicings);
+			scala.collection.immutable.Map<String, Segment> segments = p.segments();
+			scala.collection.immutable.Map<String, Datatype> datatypes = p.datatypes();
+			return parseEnhanced(m, segments, datatypes, constraintsXml, additionalConstraintsXml,valueSetsXML, valueSetBindings,coConstraints, slicings);
 		} catch (Exception e) {
 			e.printStackTrace();
 			throw new ProfileParserException(e.getMessage());
 		}
 	}
 	
+	 @Override
+	  public ProfileModel parseEnhanced(Object conformanceProfile, String constraintsXml, String additionalConstraintsXml, String valueSetsXML,
+			String valueSetBindings, String coConstraints, String slicings) throws ProfileParserException {
+		// TODO Auto-generated method stub
+		return null;
+	  }
 	
 	
 	@Override
-	public ProfileModel parseEnhanced(Object conformanceProfile, String constraintsXml,String additionalConstraintsXml,
+	public ProfileModel parseEnhanced(Object conformanceProfile,Object segmentsMap, Object datatypesMap, String constraintsXml,String additionalConstraintsXml,
 			String valueSetsXml, String valueSetBindingsXml, String coConstraintsXml,String slicingsXml) throws ProfileParserException {
 		try {
 			if (!(conformanceProfile instanceof Message)) {
 				throw new IllegalArgumentException(
 						"Conformance Profile is not a valid instanceof " + Message.class.getCanonicalName());
 			}
+			if (!(segmentsMap instanceof scala.collection.immutable.Map<?, ?>)) {
+				throw new IllegalArgumentException(
+						"segmentsMap is not a valid instanceof " + scala.collection.immutable.Map.class.getCanonicalName());
+			}
+			
+			if (!(datatypesMap instanceof scala.collection.immutable.Map<?, ?>)) {
+				throw new IllegalArgumentException(
+						"datatypesMap is not a valid instanceof " + scala.collection.immutable.Map.class.getCanonicalName());
+			}
+			scala.collection.immutable.Map<String, Datatype> datatypesScalaMap = (scala.collection.immutable.Map<String, Datatype>)datatypesMap;
+			scala.collection.immutable.Map<String, Segment> segmentsScalaMap = (scala.collection.immutable.Map<String, Segment>)segmentsMap;
+			
 			String c1Xml = constraintsXml;
 			String c2Xml = additionalConstraintsXml;
 			String vsXML = valueSetsXml;
@@ -194,6 +217,9 @@ public abstract class HL7V2ProfileParser extends ProfileParser {
 			
 			this.profileSlicing = slicingsParser.slicings(slicingsXml);
 			
+			
+			
+			
 			this.singleCodeBindings = singleCodeBindingsParser.singleCodeBindings(vsbXml);	
 			
 			if (c2Xml != null) {
@@ -207,6 +233,43 @@ public abstract class HL7V2ProfileParser extends ProfileParser {
 				}
 			}
 			processEnhanced((Message) conformanceProfile);
+			
+			//add slicings segments and datatypes
+			if (profileSlicing != null && profileSlicing.getSegmentReferences().size()>0) {
+				java.util.Map<String, Segment> javaSegmentsMap = JavaConverters.asJava(segmentsScalaMap);
+				for (String ss : profileSlicing.getSegmentReferences()) {
+					if (javaSegmentsMap != null) {
+						Segment s = javaSegmentsMap.get(ss);
+						if (s != null) {
+							if (!this.segmentsMap.containsKey(s.id())) {
+
+								// process and add
+								ProfileElement element = this.processEnhanced(s, null);
+								this.segmentsMap.put(s.id(), element);
+							}
+
+						}
+					}
+				}
+			}
+			if (profileSlicing != null && profileSlicing.getDataTypeReferences().size()>0) {
+				java.util.Map<String, Datatype> javaDataTypesMap = JavaConverters.asJava(datatypesScalaMap);
+				for (String dd : profileSlicing.getDataTypeReferences()) {
+					if (javaDataTypesMap != null) {
+						Datatype d = javaDataTypesMap.get(dd);
+						if (d != null) {
+							if (!this.datatypesMap.containsKey(d.id())) {
+								// process and add
+								ProfileElement element = this.processEnhanced(d);
+								this.datatypesMap.put(d.id(), element);
+							}
+						}
+					}
+				}
+			}
+			
+			filterSlicings(model.getMessage().getId());
+			
 			return model;
 		} catch (XPathExpressionException e) {
 			throw new ProfileParserException(e.getLocalizedMessage());
@@ -352,9 +415,10 @@ public abstract class HL7V2ProfileParser extends ProfileParser {
 		}
 								
 		model.setCoConstraints(findCoConstraints(model.getMessage().getId()));
-		filterSlicings(model.getMessage().getId());
+		
 		model.setProfileSlicing(this.profileSlicing);
 		
+	
 		
 		model.setDatatypes(this.datatypesMap);
 		model.setSegments(this.segmentsMap);		
@@ -635,7 +699,6 @@ public abstract class HL7V2ProfileParser extends ProfileParser {
 		element.setPredicates(this.findPredicates(this.predicates.getGroups(), g.id(), g.name()));
 		element.setConformanceStatements(
 				this.findConformanceStatements(this.conformanceStatements.getGroups(), g.id(), g.name()));
-
 		// String targetPath = getTargetPath(element);
 		// if (!targetPath.equals("")) {
 		// for (ConformanceStatement cs :
@@ -712,7 +775,7 @@ public abstract class HL7V2ProfileParser extends ProfileParser {
 		if (children != null) {
 			Iterator<SegRefOrGroup> it = children.iterator();
 			while (it.hasNext()) {
-				processEnhanced(it.next(), element);
+				processEnhanced(it.next(), element);						
 			}
 		}
 		return element;

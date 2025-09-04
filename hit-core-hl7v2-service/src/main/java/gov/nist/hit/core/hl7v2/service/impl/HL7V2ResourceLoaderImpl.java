@@ -492,7 +492,7 @@ public class HL7V2ResourceLoaderImpl extends HL7V2ResourceLoader {
 		JsonNode coConstraintsId = formatObj.findValue("coConstraintsId");
 		//yes I know it the same... it's there in case the alternate id changes...
 		if (coConstraintsId == null) {
-			coConstraintsId = formatObj.findValue("coConstraintsId");
+			coConstraintsId = formatObj.findValue("coConstraintId");
 		}
 		
 		

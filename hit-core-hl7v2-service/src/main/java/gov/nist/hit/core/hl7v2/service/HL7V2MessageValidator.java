@@ -22,6 +22,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import gov.nist.healthcare.unified.enums.Context;
 import gov.nist.healthcare.unified.model.EnhancedReport;
 import gov.nist.healthcare.unified.proxy.ValidationProxy;
+import gov.nist.healthcare.validation.plugin.vsproxy.SSAdministrativeDiagnosisCDCICD10CMValueSetProxy;
 import gov.nist.hit.core.domain.Domain;
 import gov.nist.hit.core.domain.MessageValidationCommand;
 import gov.nist.hit.core.domain.MessageValidationResult;
@@ -38,6 +39,7 @@ import hl7.v2.validation.content.ConformanceContext;
 import hl7.v2.validation.content.DefaultConformanceContext;
 import hl7.v2.validation.vs.ValueSetLibrary;
 import hl7.v2.validation.vs.ValueSetLibraryImpl;
+import hl7.v2.validation.vs.factory.impl.java.ValueSetProxy;
 
 public abstract class HL7V2MessageValidator implements MessageValidator {
 
@@ -174,6 +176,8 @@ public abstract class HL7V2MessageValidator implements MessageValidator {
 //						}).build();
 				
 					
+				
+				
 						
 				//get hl7v2 validation version if specified
 				String validationServiceVersion = null;
@@ -187,6 +191,8 @@ public abstract class HL7V2MessageValidator implements MessageValidator {
 				if (command.getUseHttp() != null && command.getUseHttp() instanceof Boolean) {
 					useHttp = command.getUseHttp();
 				}
+								
+				
 				
 				//Setting options
 				Map<String,Object> options = new HashMap<String, Object>();
@@ -194,7 +200,13 @@ public abstract class HL7V2MessageValidator implements MessageValidator {
 				options.put("configuration", conf);
 				options.put("apikeys",v2TestContext.getApiHashMap());
 				options.put("useHttp", useHttp);
-					
+				
+				if (command.getUseValueSetProxy() != null && command.getUseValueSetProxy()) {
+					Map<String, Class<? extends ValueSetProxy>> valueSetProxies = new HashMap();
+					valueSetProxies.put("PHVS_AdministrativeDiagnosis_CDC_ICD-10CM", SSAdministrativeDiagnosisCDCICD10CMValueSetProxy.class);
+					options.put("valueSetProxies",valueSetProxies);
+				}
+				
 //						call external service
 						report = vp.validate(message,
 							v2TestContext.getConformanceProfile().getXml(),

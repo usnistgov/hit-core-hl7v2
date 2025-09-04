@@ -1,22 +1,26 @@
 package gov.nist.hit.core.hl7v2.domain;
 
-import com.fasterxml.jackson.annotation.JsonValue;
-
 public class HL7V2ValidationDetection {
-	 
-	  private String template;
-	  private String category;
-	  private HL7V2ValidationClassificationEnum	classfication;
+	
+	private String name;
+	private String template;
+	private String category;
+	private HL7V2ValidationClassificationEnum classification;
 	  	  
-	public HL7V2ValidationDetection(String template, String category, HL7V2ValidationClassificationEnum classfication) {
+	public HL7V2ValidationDetection(String template, String category, HL7V2ValidationClassificationEnum classification) {
 		super();
 		this.template = template;
 		this.category = category;
-		this.classfication = classfication;
+		this.classification = classification;
 	}
 	
 	public HL7V2ValidationDetection() {
+		super();				
+	}
+	
+	public HL7V2ValidationDetection(String name) {
 		super();		
+		this.name = name;
 	}
 		
 	public String getTemplate() {
@@ -31,13 +35,22 @@ public class HL7V2ValidationDetection {
 	public void setCategory(String category) {
 		this.category = category;
 	}
-	public HL7V2ValidationClassificationEnum getClassfication() {
-		return classfication;
+	public HL7V2ValidationClassificationEnum getClassification() {
+		return classification;
 	}
-	public void setClassfication(HL7V2ValidationClassificationEnum classfication) {
-		this.classfication = classfication;
+	public void setClassfication(HL7V2ValidationClassificationEnum classification) {
+		this.classification = classification;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
 	}
 	  
+	
 	  
 	  
 	  

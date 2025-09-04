@@ -3,7 +3,7 @@ package gov.nist.hit.core.hl7v2.domain;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum HL7V2ValidationClassificationEnum {
-	  ERROR("Error"),WARNING("Warning"),ALERT("Alert"),INFORMATIONAL("Informational"),AFFIRMATIVE("Affirmative"),SPEC_ERROR("Spec Error");
+	  ERROR("Error"),WARNING("Warning"),ALERT("Alert"),INFORMATIONAL("Informational"),AFFIRMATIVE("Affirmative"),SPEC_ERROR("Specification Error");
 	  
 	  private String text;
 	  
