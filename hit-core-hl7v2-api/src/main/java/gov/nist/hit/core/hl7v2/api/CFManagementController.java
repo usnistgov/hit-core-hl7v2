@@ -641,6 +641,7 @@ public class CFManagementController {
     if (testSteps != null) {
       for (CFTestStep step : testSteps) {
         step.setScope(TestScope.GLOBAL);
+        step.getTestContext().setScope(TestScope.GLOBAL);
       }
     }
     Set<CFTestStepGroup> testStepGroups = testPlan.getTestStepGroups();
@@ -718,6 +719,7 @@ public class CFManagementController {
     if (testSteps != null) {
       for (CFTestStep step : testSteps) {
         step.setScope(TestScope.USER);
+        step.getTestContext().setScope(TestScope.USER);
       }
     }
     Set<CFTestStepGroup> testStepGroups = testPlan.getTestStepGroups();
