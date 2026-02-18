@@ -95,6 +95,9 @@ public class HL7V2ValidationConfigurationServiceImpl extends HL7V2ValidationConf
 			if (config.hasPath("report.o-usage.classification")) {
 				classification.getoUsage().setClassfication(HL7V2ValidationClassificationEnum.fromText(config.getString("report.o-usage.classification").toUpperCase()));
 			}
+			if (config.hasPath("report.o-usage-complex.classification")) {
+				classification.getoUsageComplex().setClassfication(HL7V2ValidationClassificationEnum.fromText(config.getString("report.o-usage-complex.classification").toUpperCase()));
+			}
 			if (config.hasPath("report.cardinality.classification")) {
 				classification.getCardinality().setClassfication(HL7V2ValidationClassificationEnum.fromText(config.getString("report.cardinality.classification").toUpperCase()));
 			}

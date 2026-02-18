@@ -17,6 +17,7 @@ public class HL7V2ValidationClassifications extends ValidationClassifications{
 	private HL7V2ValidationDetection rUsage = new HL7V2ValidationDetection("r-usage");
 	private HL7V2ValidationDetection reUsage = new HL7V2ValidationDetection("re-usage");
 	private HL7V2ValidationDetection oUsage = new HL7V2ValidationDetection("o-usage");
+	private HL7V2ValidationDetection oUsageComplex = new HL7V2ValidationDetection("o-usage-complex");
 	private HL7V2ValidationDetection cardinality = new HL7V2ValidationDetection("cardinality");
 	private HL7V2ValidationDetection nullCardinality = new HL7V2ValidationDetection("null-cardinality");
 	private HL7V2ValidationDetection length = new HL7V2ValidationDetection("length");
@@ -111,6 +112,7 @@ public class HL7V2ValidationClassifications extends ValidationClassifications{
 		detections.add(rUsage);
 		detections.add(reUsage);
 		detections.add(oUsage);
+		detections.add(oUsageComplex);
 		detections.add(cardinality);	
 		return detections;
 	}
@@ -223,6 +225,28 @@ public class HL7V2ValidationClassifications extends ValidationClassifications{
 	public void setoUsage(HL7V2ValidationDetection oUsage) {
 		this.oUsage = oUsage;
 	}
+
+	
+	
+
+
+
+
+
+	public HL7V2ValidationDetection getoUsageComplex() {
+		return oUsageComplex;
+	}
+
+
+
+
+
+
+
+	public void setoUsageComplex(HL7V2ValidationDetection oUsageComplex) {
+		this.oUsageComplex = oUsageComplex;
+	}
+
 
 
 
