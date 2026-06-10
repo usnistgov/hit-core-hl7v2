@@ -719,7 +719,9 @@ public class CFManagementController {
     if (testSteps != null) {
       for (CFTestStep step : testSteps) {
         step.setScope(TestScope.USER);
-        step.getTestContext().setScope(TestScope.USER);
+        if(step.getTestContext() != null) {
+            step.getTestContext().setScope(TestScope.USER);
+        }
       }
     }
     Set<CFTestStepGroup> testStepGroups = testPlan.getTestStepGroups();

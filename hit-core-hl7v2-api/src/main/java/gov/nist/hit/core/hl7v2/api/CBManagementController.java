@@ -594,7 +594,10 @@ public class CBManagementController {
 		if (testSteps != null) {
 			for (TestStep testStep : testSteps) {
 				testStep.setScope(scope);
-				testStep.getTestContext().setScope(scope);
+				if(testStep.getTestContext() !=null) {
+					testStep.getTestContext().setScope(scope);
+				}
+				
 			}
 		}
 	}
